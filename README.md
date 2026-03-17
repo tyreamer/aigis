@@ -1,8 +1,12 @@
 # aigis
 
-**AI Execution Governance Linter** — catch unsafe AI agent autonomy before runtime.
+**Static analysis for AI agent safety.** Catches tools that can delete, execute, or exfiltrate without approval — before your agent ever runs.
 
-aigis statically scans Python AI agent code and flags tools that can mutate, execute, or exfiltrate without human approval, privilege controls, or execution bounds.
+> *Your agent has `subprocess.run(cmd, shell=True)` exposed as a tool with no approval gate. aigis finds that.*
+
+## Status: Public Alpha
+
+aigis is in early public alpha (v0.2.0). The core rules are stable and validated against real-world repos, but the API surface, output format, and framework coverage may change. We welcome feedback and issues.
 
 ## Why This Matters
 

@@ -20,7 +20,7 @@ def format_console(
     baselined_count: int = 0,
 ) -> str:
     lines = [
-        f"aigis v{__version__} — AI Execution Governance Linter",
+        f"aigis v{__version__} - AI Execution Governance Linter",
         f"Scanning: {target}",
         "",
     ]

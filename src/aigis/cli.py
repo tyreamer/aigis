@@ -15,7 +15,7 @@ from .output import format_console, format_json, format_sarif
 from .rules import run_all_rules
 from .suppression import SuppressionFilter
 
-app = typer.Typer(help="aigis — AI Execution Governance Linter", add_completion=False)
+app = typer.Typer(help="aigis - AI Execution Governance Linter", add_completion=False)
 
 
 class OutputFormat(str, Enum):
@@ -48,7 +48,7 @@ def scan(
     path: Path = typer.Argument(".", help="File or directory to scan"),
     fmt: OutputFormat = typer.Option(OutputFormat.console, "--format", "-f", help="Output format"),
     output: Optional[Path] = typer.Option(None, "--output", "-o", help="Write output to file"),
-    baseline_path: Optional[Path] = typer.Option(None, "--baseline", "-b", help="Baseline file — only report new findings"),
+    baseline_path: Optional[Path] = typer.Option(None, "--baseline", "-b", help="Baseline file - only report new findings"),
     config_path: Optional[Path] = typer.Option(None, "--config", "-c", help="Config file (default: .aigis.yaml)"),
     severity_threshold: SeverityThreshold = typer.Option(
         SeverityThreshold.error, "--severity-threshold", "-s",
