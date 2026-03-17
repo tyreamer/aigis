@@ -1,20 +1,16 @@
-<p align="center">
-  <img src="docs/logo-200.png" alt="aigis" width="120">
-</p>
+# aigis
 
-<h1 align="center">aigis</h1>
-
-<p align="center"><strong>Static analysis for AI agent safety.</strong> Catches tools that can delete, execute, or exfiltrate without approval — before your agent ever runs.</p>
+**Static analysis for AI agent safety.** Catches tools that can delete, execute, or exfiltrate without approval — before your agent ever runs.
 
 > *Your agent has `subprocess.run(cmd, shell=True)` exposed as a tool with no approval gate. aigis finds that.*
 
 ## Status: Public Alpha
 
-aigis is in early public alpha (v0.2.0). The core rules are stable and validated against real-world repos, but the API surface, output format, and framework coverage may change. We welcome feedback and issues.
+aigis is in early public alpha (v0.2.0). The core rules are stable and validated against real-world repos, but the API surface, output format, and framework coverage may change. Feedback and issues welcome.
 
 ## Why This Matters
 
-AI agents can call tools. Tools can delete files, run shell commands, send HTTP requests. If there is no approval gate, no consent wrapper, and no iteration limit — the agent can do whatever it wants, for as long as it wants.
+AI agents call tools. Tools delete files, run shell commands, send HTTP requests. If there is no approval gate, no consent wrapper, and no iteration limit — the agent can do whatever it wants, for as long as it wants.
 
 aigis catches these governance gaps before they reach production.
 
@@ -41,26 +37,16 @@ An AI agent tool that runs arbitrary shell commands with `shell=True`. No human 
 pip install -e .
 ```
 
-## 5-Minute Quick Start
+## Quick Start
 
 ```bash
-# Scan a file or directory
-aigis scan .
-
-# Scan the included examples
-aigis scan examples/unsafe_tool.py
-aigis scan examples/unbounded_agent.py
-aigis scan examples/safe_agent.py       # clean — no findings
-
-# JSON output for CI
-aigis scan . -f json
-
-# SARIF for GitHub Code Scanning
-aigis scan . -f sarif -o results.sarif
-
-# Create a baseline (accept current findings, fail only on new ones)
-aigis baseline . -o .aigis-baseline.json
-aigis scan . --baseline .aigis-baseline.json
+aigis scan .                                   # scan current directory
+aigis scan examples/unsafe_tool.py             # scan a single file
+aigis scan . -f json                           # JSON output for CI
+aigis scan . -f html -o report.html            # visual HTML report
+aigis scan . -f sarif -o results.sarif         # SARIF for GitHub Code Scanning
+aigis baseline . -o .aigis-baseline.json       # create a baseline
+aigis scan . --baseline .aigis-baseline.json   # fail only on new findings
 ```
 
 ## Rules
@@ -84,7 +70,7 @@ def delete_user(user_id: str):
 
 ### AIGIS002 — Privileged Operation Without Consent Wrapper
 
-Fires when a tool calls subprocess/system commands without an explicit consent or policy wrapper. Generic `@requires_approval` is not sufficient — this rule requires `@requires_consent`, `@policy_check`, or similar.
+Fires when a tool calls subprocess/system commands without an explicit consent or policy wrapper. Generic `@requires_approval` is not sufficient — requires `@requires_consent`, `@policy_check`, or similar.
 
 ```python
 # Flagged (generic approval is not consent-level):
@@ -114,7 +100,7 @@ agent = AgentExecutor(agent=llm, tools=[t], max_iterations=10)
 
 # Clean (execution-time budget):
 agent = Agent(name="x", tools=[my_tool])
-Runner.run(agent, input="go", max_turns=10)  # budget at execution time
+Runner.run(agent, input="go", max_turns=10)
 ```
 
 ## Supported Frameworks
@@ -152,9 +138,7 @@ suppressions:
     reason: "Budget enforced by external orchestrator"
 ```
 
-See `examples/.aigis.yaml` for a complete example.
-
-## Baseline Support
+## Baseline
 
 Accept current findings, fail only on new ones:
 
@@ -163,25 +147,16 @@ aigis baseline . -o .aigis-baseline.json
 aigis scan . --baseline .aigis-baseline.json
 ```
 
-Fingerprints use rule ID + file path + tool name (not line numbers), so they survive minor code edits.
-
-## CI Integration
-
-See `.github/workflows/aigis.yml` for a GitHub Actions workflow that:
-- Scans on every push and PR
-- Uploads SARIF results to GitHub Code Scanning
-- Optionally uses a baseline for incremental enforcement
+Fingerprints use rule ID + file path + tool name (not line numbers), so they survive code edits.
 
 ## Output Formats
 
-- **Console** — human-readable with evidence, remediation, and per-rule summary
-- **JSON** — structured findings with full evidence objects
-- **SARIF v2.1.0** — for GitHub Code Scanning, VS Code SARIF Viewer, etc.
-- **HTML** — self-contained dark-mode report with filters, evidence cards, and remediation
-
-```bash
-aigis scan . -f html -o report.html    # open in any browser
-```
+| Format | Use Case | Command |
+|--------|----------|---------|
+| **Console** | Local development | `aigis scan .` |
+| **JSON** | CI pipelines, scripting | `aigis scan . -f json` |
+| **SARIF** | GitHub Code Scanning | `aigis scan . -f sarif -o results.sarif` |
+| **HTML** | Reports, reviews, demos | `aigis scan . -f html -o report.html` |
 
 ## What It Does NOT Detect
 
@@ -196,7 +171,7 @@ aigis scan . -f html -o report.html    # open in any browser
 ## Design Principles
 
 - **Deterministic** — code patterns only, never LLM judgment
-- **Tri-state reasoning** — yes / no / unknown; unknown does not fail
-- **Low noise over broad coverage** — false negatives over false positives
+- **Tri-state** — yes / no / unknown; unknown does not fail
+- **Low noise** — false negatives over false positives
 - **Missing guard is first-class** — the absence of a control is the finding
 - **Evidence-first** — every finding explains what, why, and how to fix
