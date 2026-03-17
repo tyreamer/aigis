@@ -16,7 +16,7 @@
 | Priority | Feature | Why It Matters |
 |----------|---------|---------------|
 | **High** | Cross-file budget/sink linkage | Many repos define agents in one file and execute in another |
-| **High** | PyPI package publishing | `pip install aigis` instead of git install |
+| ~~**Done**~~ | ~~PyPI package~~ | ~~`pip install aigis-lint`~~ |
 | **High** | Posture summary output | Aggregate governance metrics per scan (tools found, gates present, budgets set) |
 | **Medium** | One-hop data-flow for indirect sinks | Catch tools that delegate to helpers containing dangerous calls |
 | **Medium** | Published GitHub Action | One-liner CI integration: `uses: tyreamer/aigis-action@v1` |

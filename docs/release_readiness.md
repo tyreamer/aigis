@@ -20,7 +20,7 @@ The scanner is functionally complete for its first wedge: detecting unsafe auton
 
 ## What is still rough
 
-- **No PyPI package yet** — install is `pip install -e .` or `pip install git+...`
+- **Published on PyPI as `aigis-lint`** — install is `pip install -e .` or `pip install git+...`
 - **No logo/branding** — plain text CLI
 - **Version 0.1.0** — signals early-stage appropriately
 - **LlamaIndex coverage is untested** — patterns exist but no real-world validation

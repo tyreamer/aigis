@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "aigis"
+name = "aigis-lint"
 version = "0.2.0"
 description = "AI Execution Governance Linter — static analysis for unsafe AI autonomy"
 readme = "README.md"

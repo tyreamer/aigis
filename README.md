@@ -73,15 +73,7 @@ Aigis is built for teams where agents interact with real systems — not toy cha
 ## Install
 
 ```bash
-pip install git+https://github.com/tyreamer/aigis.git
-```
-
-Or clone and install locally:
-
-```bash
-git clone https://github.com/tyreamer/aigis.git
-cd aigis
-pip install -e .
+pip install aigis-lint
 ```
 
 ## 5-Minute Quick Start

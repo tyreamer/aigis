@@ -16,17 +16,7 @@ Create these as GitHub Issues to show project activity and direction.
 
 ---
 
-### 2. Publish to PyPI
-
-**Title:** Publish aigis to PyPI for `pip install aigis`
-
-**Description:** Currently requires `pip install git+...` or local install. PyPI publishing would make adoption frictionless.
-
-**Priority:** High
-
----
-
-### 3. Posture summary output
+### 2. Posture summary output
 
 **Title:** Add aggregate governance posture summary to scan output
 

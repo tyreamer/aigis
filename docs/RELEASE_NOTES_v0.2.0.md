@@ -75,7 +75,7 @@ Example GitHub Actions workflow included at `.github/workflows/aigis.yml` with S
 ## Install
 
 ```bash
-pip install git+https://github.com/tyreamer/aigis.git
+pip install aigis-lint
 aigis scan .
 ```
 
