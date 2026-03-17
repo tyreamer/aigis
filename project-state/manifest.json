@@ -9,7 +9,8 @@
     "activity": {
       "active_file": "streams/activity/active.jsonl",
       "segments": [],
-      "id_field": "activity_id"
+      "id_field": "activity_id",
+      "latest_hash": "b87df3cf26494ba586fa929b4a1a94218c9954e34d32dd7ba28790210ab8a49f"
     },
     "attempts": {
       "active_file": "streams/attempts/active.jsonl",
@@ -19,12 +20,14 @@
     "decisions": {
       "active_file": "streams/decisions/active.jsonl",
       "segments": [],
-      "id_field": "decision_id"
+      "id_field": "decision_id",
+      "latest_hash": "72fa8f3646a9ee5ae4c65731777438a47892c5db5fdd520f4ee18a38b9056f40"
     },
     "timeline": {
       "active_file": "streams/timeline/active.jsonl",
       "segments": [],
-      "id_field": "event_id"
+      "id_field": "event_id",
+      "latest_hash": "07c0d4891a45455140829590a0dc6dff52feafc1c5aa09fb21959c7c31c1af5f"
     }
   }
 }

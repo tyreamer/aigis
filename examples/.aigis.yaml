@@ -1,0 +1,23 @@
+# Example .aigis.yaml configuration
+#
+# Place this in your project root. Aigis loads it automatically.
+
+# Suppress specific findings
+suppressions:
+  # Suppress by rule + path glob
+  - rule: AEG003
+    path: "examples/**"
+    reason: "Example code — budget enforcement not required"
+
+  # Suppress by symbol name
+  # - rule: AEG001
+  #   symbol: my_internal_tool
+  #   reason: "Has runtime approval via CLI prompt"
+
+# Additional path exclusions (beyond default test exclusions)
+# exclude_patterns:
+#   - "benchmarks/"
+#   - "scripts/oneshot_*.py"
+
+# Set to false to disable default test file exclusions
+# exclude_defaults: false

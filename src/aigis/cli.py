@@ -54,6 +54,10 @@ def scan(
         SeverityThreshold.error, "--severity-threshold", "-s",
         help="Minimum severity to cause non-zero exit (error, warning, note)",
     ),
+    no_default_excludes: bool = typer.Option(
+        False, "--no-default-excludes",
+        help="Disable default test file exclusions (tests/, test_*.py, etc.)",
+    ),
 ):
     """Scan Python code for unsafe AI autonomy patterns."""
     target = path.resolve()
@@ -63,9 +67,11 @@ def scan(
 
     # Load config
     cfg = AigisConfig.load(config_path)
+    if no_default_excludes:
+        cfg.exclude_defaults = False
 
     # Analyze
-    graph = PythonAnalyzer().analyze(target)
+    graph = PythonAnalyzer().analyze(target, exclude_patterns=cfg.effective_excludes)
     results = run_all_rules(graph)
 
     # Collect all findings
@@ -120,7 +126,7 @@ def baseline(
         raise typer.Exit(code=2)
 
     cfg = AigisConfig.load(config_path)
-    graph = PythonAnalyzer().analyze(target)
+    graph = PythonAnalyzer().analyze(target, exclude_patterns=cfg.effective_excludes)
     results = run_all_rules(graph)
 
     all_findings = []

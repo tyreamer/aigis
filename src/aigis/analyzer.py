@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import fnmatch
 from pathlib import Path
 
 from .frameworks import (
@@ -13,6 +14,9 @@ from .frameworks import (
     CONSENT_DECORATOR_PATTERNS,
     ENTRY_POINT_METHODS,
     ENTRY_POINT_NAMES,
+    ENTRY_POINT_QUALIFIED,
+    EXECUTION_BUDGET_PATTERNS,
+    FILE_LEVEL_BUDGET_FUNCTIONS,
     GRAPH_CONSTRUCTORS,
     TOOL_DECORATORS,
     TOOL_REGISTRATION_METHODS,
@@ -72,10 +76,20 @@ PRIVILEGED_SINKS: set[tuple[str, str]] = {
 class PythonAnalyzer:
     """Walk Python files and build an ExecutionGraph."""
 
-    def analyze(self, path: Path) -> ExecutionGraph:
+    def analyze(
+        self, path: Path, exclude_patterns: list[str] | None = None
+    ) -> ExecutionGraph:
         graph = ExecutionGraph()
         target = Path(path)
-        files = [target] if target.is_file() else sorted(target.rglob("*.py"))
+        if target.is_file():
+            files = [target]
+        else:
+            files = sorted(target.rglob("*.py"))
+            if exclude_patterns:
+                files = [
+                    f for f in files
+                    if not _is_excluded(f, target, exclude_patterns)
+                ]
         for f in files:
             self._analyze_file(f, graph)
         return graph
@@ -106,14 +120,61 @@ class PythonAnalyzer:
                 _register_tool(func, file_str, imports, graph)
 
         # Pass 2: entry points, registrations, LangGraph nodes
+        entry_var_map: dict[str, str] = {}  # variable name -> entry point node ID
         for node in ast.walk(tree):
             if isinstance(node, ast.Call):
                 _process_call(node, file_str, imports, func_defs, graph, graph_vars)
+
+        # Pass 3: LangGraph interrupt() as file-level approval signal
+        _detect_interrupt_calls(tree, file_str, imports, graph)
+
+        # Pass 4: execution-time budget detection
+        # First, collect variable names assigned from entry point constructors
+        _collect_entry_vars(tree, file_str, imports, graph, entry_var_map, graph_vars)
+        # Then, scan for execution calls that carry budget kwargs
+        _detect_execution_budgets(tree, file_str, imports, graph, entry_var_map)
+
+        # Pass 5: propagate budgets through known wrapper patterns
+        # e.g. GroupChat(max_round=N) → GroupChatManager(groupchat=chat_var)
+        _propagate_wrapper_budgets(tree, file_str, graph, entry_var_map)
+
+        # Pass 6: file-level budget from standalone orchestration functions
+        # e.g. initiate_group_chat(pattern=p, max_rounds=5)
+        _detect_file_level_budgets(tree, file_str, imports, graph)
 
 
 # ---------------------------------------------------------------------------
 # Import collection
 # ---------------------------------------------------------------------------
+
+def _is_excluded(
+    file_path: Path, base: Path, patterns: list[str]
+) -> bool:
+    """Check if a file matches any exclusion pattern."""
+    try:
+        rel = file_path.relative_to(base)
+    except ValueError:
+        rel = file_path
+    rel_posix = rel.as_posix()
+    name = file_path.name
+
+    for pattern in patterns:
+        # Directory pattern (ends with /)
+        if pattern.endswith("/"):
+            dir_name = pattern.rstrip("/")
+            if any(part == dir_name for part in rel.parts[:-1]):
+                return True
+            # Also match if the relative path starts with the dir
+            if rel_posix.startswith(dir_name + "/"):
+                return True
+        else:
+            # File name glob pattern
+            if fnmatch.fnmatch(name, pattern):
+                return True
+            if fnmatch.fnmatch(rel_posix, pattern):
+                return True
+    return False
+
 
 def _collect_graph_vars(tree: ast.AST, imports: dict[str, str], out: set[str]):
     """Find variable names assigned from known graph constructors.
@@ -410,6 +471,12 @@ def _process_call(
 
     # --- Entry points: AgentExecutor(...), graph.compile(...) ---------------
     is_entry = call_nm in ENTRY_POINT_NAMES
+    # Disambiguate names that exist in multiple frameworks (e.g. "Agent")
+    if is_entry and call_nm in ENTRY_POINT_QUALIFIED:
+        qualified_modules = ENTRY_POINT_QUALIFIED[call_nm]
+        resolved = imports.get(call_nm, "")
+        if resolved:
+            is_entry = any(resolved.startswith(mod) for mod in qualified_modules)
     if not is_entry and isinstance(call.func, ast.Attribute) and call.func.attr in ENTRY_POINT_METHODS:
         is_entry = _is_graph_compile(call, imports, graph_vars or set())
     if is_entry:
@@ -477,3 +544,439 @@ def _process_call(
                         func_defs[arg.id], file_str, imports, graph,
                         extra_metadata={"registration": "register_tool_call"},
                     )
+
+
+# ---------------------------------------------------------------------------
+# LangGraph interrupt() detection
+# ---------------------------------------------------------------------------
+
+# Modules whose `interrupt` import counts as a LangGraph HITL signal
+_INTERRUPT_MODULES = {"langgraph.types", "langgraph"}
+
+
+def _detect_interrupt_calls(
+    tree: ast.AST,
+    file_str: str,
+    imports: dict[str, str],
+    graph: ExecutionGraph,
+):
+    """Detect interrupt() calls from langgraph.types as file-level approval.
+
+    If `interrupt` is imported from a LangGraph module and called anywhere
+    in the file, attach an APPROVAL_GATE to every ENTRY_POINT in this file.
+    """
+    # Check if interrupt is imported from a LangGraph module
+    interrupt_name = None
+    for local_name, resolved in imports.items():
+        if resolved in {f"{mod}.interrupt" for mod in _INTERRUPT_MODULES}:
+            interrupt_name = local_name
+            break
+
+    if interrupt_name is None:
+        return
+
+    # Check if interrupt() is actually called anywhere in the file
+    has_interrupt_call = False
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+            if node.func.id == interrupt_name:
+                has_interrupt_call = True
+                break
+
+    if not has_interrupt_call:
+        return
+
+    # Attach approval gate to all entry points in this file
+    for ep in graph.nodes_by_kind(NodeKind.ENTRY_POINT):
+        if ep.location.file != file_str:
+            continue
+        gate_id = f"gate:{file_str}:interrupt:{ep.location.line}"
+        if gate_id in graph.nodes:
+            continue
+        graph.add_node(
+            Node(
+                id=gate_id,
+                kind=NodeKind.APPROVAL_GATE,
+                name="interrupt",
+                location=ep.location,
+                metadata={"type": "langgraph_interrupt", "source": "interrupt_call"},
+            )
+        )
+        graph.add_edge(Edge(source=gate_id, target=ep.id, kind=EdgeKind.WRAPS))
+
+
+# ---------------------------------------------------------------------------
+# Execution-time budget detection (Pass 4)
+# ---------------------------------------------------------------------------
+
+def _collect_entry_vars(
+    tree: ast.AST,
+    file_str: str,
+    imports: dict[str, str],
+    graph: ExecutionGraph,
+    entry_var_map: dict[str, str],
+    graph_vars: set[str],
+):
+    """Map variable names to entry point node IDs.
+
+    Matches patterns like:
+        agent = Agent(...)
+        crew = Crew(...)
+        app = graph.compile(...)
+    """
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign):
+            continue
+        if not isinstance(node.value, ast.Call):
+            continue
+        call = node.value
+        call_nm = _call_name(call)
+
+        # Check if this call created an entry point we already registered
+        # Build the expected entry point ID
+        ep_id = f"entry:{file_str}:{call_nm}:{call.lineno}"
+
+        # For compile() calls, the call_name is "compile" from the attribute
+        if isinstance(call.func, ast.Attribute):
+            ep_id_method = f"entry:{file_str}:{call.func.attr}:{call.lineno}"
+            if ep_id_method in graph.nodes:
+                ep_id = ep_id_method
+
+        if ep_id in graph.nodes:
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    entry_var_map[target.id] = ep_id
+
+    # One-hop aliasing: b = a where a is already an entry var
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign):
+            continue
+        if isinstance(node.value, ast.Name) and node.value.id in entry_var_map:
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id not in entry_var_map:
+                    entry_var_map[target.id] = entry_var_map[node.value.id]
+
+
+def _detect_execution_budgets(
+    tree: ast.AST,
+    file_str: str,
+    imports: dict[str, str],
+    graph: ExecutionGraph,
+    entry_var_map: dict[str, str],
+):
+    """Detect execution-time budget controls on entry point variables.
+
+    Scans for calls like:
+        Runner.run(agent, max_turns=5)       — budget via positional arg link
+        agent.invoke(input, config={...})    — budget via receiver variable
+        manager.initiate_chat(..., max_turns=N) — budget via receiver variable
+    Also resolves simple config variable references:
+        cfg = {"recursion_limit": 25}
+        app.invoke(input, config=cfg)
+    """
+    if not EXECUTION_BUDGET_PATTERNS:
+        return
+
+    # Collect simple dict variable assignments for config resolution
+    dict_vars = _collect_dict_vars(tree)
+
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+
+        for pattern in EXECUTION_BUDGET_PATTERNS:
+            ep_id = _match_execution_pattern(node, pattern, entry_var_map, imports)
+            if ep_id is None:
+                continue
+
+            # Found a matching execution call with budget — create the budget node
+            budget_kwarg = _find_budget_kwarg_in_call(node, pattern, dict_vars)
+            if budget_kwarg:
+                budget_id = f"budget:{file_str}:exec:{budget_kwarg}:{node.lineno}"
+                if budget_id not in graph.nodes:
+                    loc = Location(file=file_str, line=node.lineno, col=node.col_offset)
+                    graph.add_node(
+                        Node(
+                            id=budget_id,
+                            kind=NodeKind.BUDGET_CONTROL,
+                            name=budget_kwarg,
+                            location=loc,
+                            metadata={"type": budget_kwarg, "source": "execution_call"},
+                        )
+                    )
+                    graph.add_edge(Edge(source=budget_id, target=ep_id, kind=EdgeKind.WRAPS))
+
+
+def _match_execution_pattern(
+    call: ast.Call,
+    pattern: dict,
+    entry_var_map: dict[str, str],
+    imports: dict[str, str],
+) -> str | None:
+    """Check if a call matches an execution budget pattern and return the entry point ID.
+
+    Returns the matched entry point node ID, or None if no match.
+    """
+    methods = pattern.get("methods", set())
+
+    # All patterns require attribute-style calls: something.method(...)
+    if not isinstance(call.func, ast.Attribute):
+        return None
+    if call.func.attr not in methods:
+        return None
+
+    # Pattern type 1: Class.method(entry_var, ..., budget_kwarg=N)
+    # e.g. Runner.run(agent, max_turns=5)
+    if "callers" in pattern:
+        callers = pattern["callers"]
+        if isinstance(call.func.value, ast.Name):
+            if call.func.value.id not in callers:
+                resolved = imports.get(call.func.value.id, "")
+                if not any(c in resolved for c in callers):
+                    return None
+        else:
+            return None
+
+        arg_idx = pattern.get("entry_arg_index", 0)
+        if len(call.args) <= arg_idx:
+            return None
+        arg = call.args[arg_idx]
+        if isinstance(arg, ast.Name) and arg.id in entry_var_map:
+            return entry_var_map[arg.id]
+        return None
+
+    # Pattern type 2: entry_var.method(..., budget_kwarg=N)
+    # e.g. app.invoke(input, config={"recursion_limit": 25})
+    if pattern.get("receiver_is_entry"):
+        if isinstance(call.func.value, ast.Name):
+            var_name = call.func.value.id
+            if var_name in entry_var_map:
+                return entry_var_map[var_name]
+        return None
+
+    # Pattern type 3: any_receiver.method(entry_var, ..., budget_kwarg=N)
+    # e.g. proxy.initiate_chat(assistant, max_turns=5)
+    # The receiver can be anything, but the positional arg must be an entry var.
+    if pattern.get("any_receiver"):
+        arg_idx = pattern.get("entry_arg_index", 0)
+        if len(call.args) <= arg_idx:
+            return None
+        arg = call.args[arg_idx]
+        if isinstance(arg, ast.Name) and arg.id in entry_var_map:
+            return entry_var_map[arg.id]
+        return None
+
+    return None
+
+
+def _find_budget_kwarg_in_call(
+    call: ast.Call,
+    pattern: dict,
+    dict_vars: dict[str, set[str]] | None = None,
+) -> str | None:
+    """Find a budget kwarg in a call, checking direct kwargs, config dicts,
+    and config variable references."""
+    # Check direct kwargs
+    budget_kwargs = pattern.get("budget_kwargs", set())
+    for kw in call.keywords:
+        if kw.arg in budget_kwargs:
+            return kw.arg
+
+    # Check config dict: config={"recursion_limit": 25}
+    config_keys = pattern.get("budget_in_config", set())
+    if config_keys:
+        for kw in call.keywords:
+            if kw.arg == "config":
+                # Literal dict: config={"recursion_limit": 25}
+                if isinstance(kw.value, ast.Dict):
+                    for key in kw.value.keys:
+                        if isinstance(key, ast.Constant) and key.value in config_keys:
+                            return key.value
+                # Variable reference: config=cfg (resolve via dict_vars)
+                if (
+                    dict_vars
+                    and isinstance(kw.value, ast.Name)
+                    and kw.value.id in dict_vars
+                ):
+                    for key in config_keys:
+                        if key in dict_vars[kw.value.id]:
+                            return key
+
+    return None
+
+
+def _collect_dict_vars(tree: ast.AST) -> dict[str, set[str]]:
+    """Collect variable names assigned to dict literals, recording their keys.
+
+    Matches: cfg = {"recursion_limit": 25, "other": "value"}
+    Returns: {"cfg": {"recursion_limit", "other"}}
+    """
+    result: dict[str, set[str]] = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign):
+            continue
+        if not isinstance(node.value, ast.Dict):
+            continue
+        keys: set[str] = set()
+        for key in node.value.keys:
+            if isinstance(key, ast.Constant) and isinstance(key.value, str):
+                keys.add(key.value)
+        if keys:
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    result[target.id] = keys
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Budget propagation through wrapper patterns (Pass 5)
+# ---------------------------------------------------------------------------
+
+# Maps wrapper entry point name -> kwarg that references the inner entry point variable
+_BUDGET_PROPAGATION = {
+    "GroupChatManager": "groupchat",
+}
+
+
+def _propagate_wrapper_budgets(
+    tree: ast.AST,
+    file_str: str,
+    graph: ExecutionGraph,
+    entry_var_map: dict[str, str],
+):
+    """Propagate budget controls from inner entry points to their wrappers.
+
+    Handles patterns like:
+        chat = GroupChat(agents=[...], max_round=10)
+        manager = GroupChatManager(groupchat=chat)
+
+    If 'chat' has a BUDGET_CONTROL, copy it to 'manager'.
+    """
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign):
+            continue
+        if not isinstance(node.value, ast.Call):
+            continue
+        call = node.value
+        call_nm = _call_name(call)
+
+        if call_nm not in _BUDGET_PROPAGATION:
+            continue
+
+        inner_kwarg = _BUDGET_PROPAGATION[call_nm]
+
+        # Find the wrapper's entry point ID
+        wrapper_ep_id = f"entry:{file_str}:{call_nm}:{call.lineno}"
+        if wrapper_ep_id not in graph.nodes:
+            continue
+
+        # Find the inner entry point variable from kwargs
+        inner_var = None
+        for kw in call.keywords:
+            if kw.arg == inner_kwarg and isinstance(kw.value, ast.Name):
+                inner_var = kw.value.id
+                break
+
+        if inner_var is None or inner_var not in entry_var_map:
+            continue
+
+        inner_ep_id = entry_var_map[inner_var]
+
+        # Check if the inner entry point has budget controls
+        inner_budgets = [
+            e for e in graph.edges_to(inner_ep_id, EdgeKind.WRAPS)
+            if graph.nodes[e.source].kind == NodeKind.BUDGET_CONTROL
+        ]
+
+        # Propagate each budget control to the wrapper
+        for edge in inner_budgets:
+            budget_node = graph.nodes[edge.source]
+            prop_id = f"budget:{file_str}:prop:{budget_node.name}:{call.lineno}"
+            if prop_id not in graph.nodes:
+                graph.add_node(
+                    Node(
+                        id=prop_id,
+                        kind=NodeKind.BUDGET_CONTROL,
+                        name=budget_node.name,
+                        location=budget_node.location,
+                        metadata={
+                            "type": budget_node.name,
+                            "source": f"propagated_from:{inner_var}",
+                        },
+                    )
+                )
+                graph.add_edge(Edge(source=prop_id, target=wrapper_ep_id, kind=EdgeKind.WRAPS))
+
+
+# ---------------------------------------------------------------------------
+# File-level budget from standalone orchestration functions (Pass 6)
+# ---------------------------------------------------------------------------
+
+def _detect_file_level_budgets(
+    tree: ast.AST,
+    file_str: str,
+    imports: dict[str, str],
+    graph: ExecutionGraph,
+):
+    """Detect standalone function calls that apply a budget to all entry points.
+
+    Handles patterns like:
+        from autogen.agentchat import initiate_group_chat
+        result = initiate_group_chat(pattern=p, max_rounds=5)
+
+    When a recognized orchestration function is called with a budget kwarg,
+    attach a BUDGET_CONTROL to every entry point in the same file.
+    """
+    if not FILE_LEVEL_BUDGET_FUNCTIONS:
+        return
+
+    # Find which local names map to known orchestration functions
+    known_locals: dict[str, set[str]] = {}  # local_name -> budget_kwargs
+    for local_name, resolved in imports.items():
+        # resolved is like "autogen.agentchat.initiate_group_chat"
+        for func_name, budget_kwargs in FILE_LEVEL_BUDGET_FUNCTIONS.items():
+            if resolved.endswith(f".{func_name}") or local_name == func_name:
+                known_locals[local_name] = budget_kwargs
+
+    if not known_locals:
+        return
+
+    # Scan for calls to these functions with budget kwargs
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        if not isinstance(node.func, ast.Name):
+            continue
+        if node.func.id not in known_locals:
+            continue
+
+        budget_kwargs = known_locals[node.func.id]
+        found_kwarg = None
+        for kw in node.keywords:
+            if kw.arg in budget_kwargs:
+                found_kwarg = kw.arg
+                break
+
+        if found_kwarg is None:
+            continue
+
+        # Apply budget to all entry points in this file
+        for ep in graph.nodes_by_kind(NodeKind.ENTRY_POINT):
+            if ep.location.file != file_str:
+                continue
+            budget_id = f"budget:{file_str}:filelevel:{found_kwarg}:{node.lineno}:{ep.location.line}"
+            if budget_id not in graph.nodes:
+                loc = Location(file=file_str, line=node.lineno, col=node.col_offset)
+                graph.add_node(
+                    Node(
+                        id=budget_id,
+                        kind=NodeKind.BUDGET_CONTROL,
+                        name=found_kwarg,
+                        location=loc,
+                        metadata={
+                            "type": found_kwarg,
+                            "source": f"file_level_function:{node.func.id}",
+                        },
+                    )
+                )
+                graph.add_edge(Edge(source=budget_id, target=ep.id, kind=EdgeKind.WRAPS))

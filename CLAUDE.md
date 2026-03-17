@@ -8,6 +8,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The broader vision (see `northStar.txt`) is Rekall — a Git-like governance infrastructure for agentic execution. Aigis is the first implementation: a deterministic static analysis tool.
 
+## Rekall Workflow
+
+Rekall tracks session context, failed attempts, and decisions across conversations. **Follow this protocol every session:**
+
+1. **Start of session**: Run `rekall brief` to get current focus, blockers, failed attempts, and next actions
+2. **Log failed attempts**: `rekall attempts add <id> --title "..." --evidence "..."`
+3. **Log decisions**: `rekall decisions propose`
+4. **Checkpoint completed work**: `rekall checkpoint --commit auto`
+5. **End of session**: `rekall session end --summary '...'`
+
 ## Build & Run
 
 ```bash
@@ -45,6 +55,9 @@ src/aigis/
     __init__.py    #   Merges all framework patterns for analyzer consumption
     langchain.py   #   LangChain: @tool, AgentExecutor, max_iterations
     langgraph.py   #   LangGraph: add_node, compile, interrupt_before, recursion_limit
+    openai_agents.py # OpenAI Agents SDK: @function_tool, Agent, max_turns
+    crewai.py      #   CrewAI: Crew, max_iter, max_rpm
+    autogen.py     #   AutoGen/AG2: AssistantAgent, GroupChat, max_turns, max_round
     custom.py      #   Generic approval/consent/tool-registration patterns
   rules/           # One file per rule, each exports check(graph) -> RuleResult
     aeg001_unguarded_mutating.py
@@ -65,6 +78,7 @@ src/aigis/
 - **Evidence**: Structured explanation on each Finding (subject_name, sink_type, approval_signal_found/kind, budget_signal_found, confidence, rationale, remediation)
 - **Sink catalog**: `MUTATING_SINKS` dict in `analyzer.py` maps `(module, method)` pairs to descriptions. `PRIVILEGED_SINKS` is the subset requiring consent/policy wrappers.
 - **Approval vs Consent**: AEG001 accepts any approval pattern (decorators/calls with "approve", "confirm", etc.). AEG002 requires stricter consent/policy patterns ("policy", "consent"). A generic `@requires_approval` satisfies AEG001 but not AEG002.
+- **Execution-time budgets**: AEG003 checks both constructor kwargs (e.g. `Agent(max_turns=N)`) and execution-time calls (e.g. `Runner.run(agent, max_turns=N)`, `app.invoke(input, config={"recursion_limit": N})`). Framework modules declare `EXECUTION_BUDGET_PATTERNS` for this.
 - **TriState**: `YES/NO/UNKNOWN` — unknown does not fail by default.
 - **Suppression**: Inline comments (`# aigis: disable=AEG001` or `# noqa: AEG001`) and YAML config (by rule, path glob, symbol name).
 - **Baseline**: Fingerprint = sha256(rule_id + relative_path + subject_name). Survives line-number shifts.
