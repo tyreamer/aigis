@@ -16,3 +16,8 @@ aigis-baseline.json
 .claude/
 .cursor/
 .windsurfrules
+northStar.txt
+AGENTS.md
+CLAUDE.md
+project-state/
+.github/copilot-instructions.md
