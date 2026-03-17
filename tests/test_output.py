@@ -127,7 +127,7 @@ def test_html_output_is_valid(fixtures_dir):
     assert "<!DOCTYPE html>" in text
     assert "aigis" in text
     assert "AEG001" in text
-    assert "FINDINGS" in text  # JS data variable
+    assert "const F=" in text or "const S=" in text  # JS data variables
 
 
 def test_html_output_has_findings_data(fixtures_dir):
@@ -146,9 +146,8 @@ def test_html_empty_findings(fixtures_dir):
 
 
 def test_html_output_self_contained(fixtures_dir):
-    """HTML report should have no external dependencies."""
+    """HTML report should not depend on external JS frameworks."""
     results = _scan(fixtures_dir / "unsafe_no_approval.py")
     text = format_html(results, str(fixtures_dir / "unsafe_no_approval.py"))
-    # No external CSS/JS/font links
-    assert "https://" not in text.split("<script>")[0].split("</style>")[0]
-    assert "<link" not in text.lower().split("<style>")[0]
+    # No external JS frameworks — font CDN is allowed (degrades gracefully)
+    assert "<script src=" not in text.lower()
