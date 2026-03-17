@@ -410,3 +410,62 @@ def test_ag2_initiate_group_chat_without_budget_fires(fixtures_dir):
     """initiate_group_chat() without max_rounds should still fire AIGIS003."""
     results = _run(fixtures_dir / "autogen_initiate_group_chat_unsafe.py")
     assert len(results["AIGIS003"].findings) >= 1
+
+
+# -- AIGIS004: unbounded retry / loop ----------------------------------------
+
+def test_aigis004_fires_on_bare_retry(fixtures_dir):
+    """@retry without max attempts should fire AIGIS004."""
+    results = _run(fixtures_dir / "retry_unbounded.py")
+    assert len(results["AIGIS004"].findings) >= 1
+    subjects = [f.evidence.subject_name for f in results["AIGIS004"].findings]
+    assert "fetch_data" in subjects
+
+
+def test_aigis004_fires_on_while_true_no_break(fixtures_dir):
+    """while True without break should fire AIGIS004."""
+    results = _run(fixtures_dir / "retry_unbounded.py")
+    subjects = [f.evidence.subject_name for f in results["AIGIS004"].findings]
+    assert "poll_status" in subjects
+
+
+def test_aigis004_silent_on_capped_retry(fixtures_dir):
+    """@retry with stop= should NOT fire AIGIS004."""
+    results = _run(fixtures_dir / "retry_bounded.py")
+    subjects = [f.evidence.subject_name for f in results["AIGIS004"].findings]
+    assert "fetch_data_safe" not in subjects
+
+
+def test_aigis004_silent_on_while_with_break(fixtures_dir):
+    """while True with break should NOT fire AIGIS004."""
+    results = _run(fixtures_dir / "retry_bounded.py")
+    subjects = [f.evidence.subject_name for f in results["AIGIS004"].findings]
+    assert "poll_with_break" not in subjects
+
+
+# -- AIGIS005: user-controlled budget ----------------------------------------
+
+def test_aigis005_fires_on_variable_budget(fixtures_dir):
+    """Budget from user variable should fire AIGIS005."""
+    results = _run(fixtures_dir / "user_controlled_budget.py")
+    assert len(results["AIGIS005"].findings) >= 1
+
+
+def test_aigis005_silent_on_constant_budget(fixtures_dir):
+    """Budget as constant should NOT fire AIGIS005."""
+    results = _run(fixtures_dir / "user_controlled_budget_safe.py")
+    assert len(results["AIGIS005"].findings) == 0
+
+
+# -- AIGIS006: raw history retrieval -----------------------------------------
+
+def test_aigis006_fires_on_raw_history(fixtures_dir):
+    """Raw chat_history passed to retrieval should fire AIGIS006."""
+    results = _run(fixtures_dir / "raw_history_retrieval.py")
+    assert len(results["AIGIS006"].findings) >= 1
+
+
+def test_aigis006_silent_on_proper_query(fixtures_dir):
+    """Proper query variable should NOT fire AIGIS006."""
+    results = _run(fixtures_dir / "raw_history_retrieval_safe.py")
+    assert len(results["AIGIS006"].findings) == 0

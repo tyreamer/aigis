@@ -165,6 +165,51 @@ Runner.run(agent, input="go", max_turns=10)
 
 Aigis checks budget controls at both construction time and execution time, including `Runner.run(max_turns=N)`, `app.invoke(config={"recursion_limit": N})`, `initiate_group_chat(max_rounds=N)`, and config variable resolution.
 
+### AIGIS004 — Unbounded Retry / Loop
+
+Fires when a tool contains a retry decorator without max attempts, or a `while True` loop without a break condition.
+
+```python
+# Flagged:
+@tool
+@retry                              # no stop=, no max_retries=
+def fetch_data(url: str) -> str:
+    return requests.post(url).text
+
+# Clean:
+@tool
+@retry(stop=stop_after_attempt(3))
+def fetch_data(url: str) -> str:
+    return requests.post(url).text
+```
+
+### AIGIS005 — User-Controlled Budget Without Cap
+
+Fires when an execution budget parameter (`max_turns`, `recursion_limit`, etc.) receives its value from a variable rather than a constant, with no visible server-side cap.
+
+```python
+# Flagged:
+def run_agent(user_max_turns: int):
+    Runner.run(agent, input="go", max_turns=user_max_turns)  # no cap
+
+# Clean:
+def run_agent(user_max_turns: int):
+    Runner.run(agent, input="go", max_turns=min(user_max_turns, 50))
+```
+
+### AIGIS006 — Raw Chat History as Retrieval Query
+
+Fires when a raw chat history variable (`messages`, `chat_history`, `conversation`) is passed directly to a retrieval function without a query rewriting step.
+
+```python
+# Flagged:
+results = store.similarity_search(chat_history)  # raw transcript as query
+
+# Clean:
+query = condense_question(chat_history)
+results = store.similarity_search(query)
+```
+
 ## Supported Frameworks
 
 | Framework | Tool Detection | Entry Points | Budget Controls |

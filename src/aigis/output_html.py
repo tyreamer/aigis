@@ -307,6 +307,9 @@ const RM={
 AIGIS001:{name:'Unguarded Mutating Tool',desc:'Side-effecting tool reachable without approval gate',sev:'e'},
 AIGIS002:{name:'Privileged Without Consent',desc:'Privileged operation needs consent/policy wrapper',sev:'e'},
 AIGIS003:{name:'Missing Execution Budget',desc:'Agent entry point without iteration or budget limit',sev:'w'},
+AIGIS004:{name:'Unbounded Retry/Loop',desc:'Retry or loop pattern without hard cap',sev:'w'},
+AIGIS005:{name:'User-Controlled Budget',desc:'Execution budget from variable with no server-side cap',sev:'w'},
+AIGIS006:{name:'Raw History Retrieval',desc:'Raw chat history passed directly to retrieval',sev:'w'},
 };
 
 const I={

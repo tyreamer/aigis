@@ -139,6 +139,18 @@ RULE_METADATA = {
         "name": "MissingExecutionBudget",
         "shortDescription": "Missing max-iterations / execution budget",
     },
+    "AIGIS004": {
+        "name": "UnboundedRetryLoop",
+        "shortDescription": "Retry or loop pattern without hard cap",
+    },
+    "AIGIS005": {
+        "name": "UserControlledBudget",
+        "shortDescription": "User-controlled execution budget without server-side cap",
+    },
+    "AIGIS006": {
+        "name": "RawHistoryRetrieval",
+        "shortDescription": "Raw chat history used directly as retrieval query",
+    },
 }
 
 _SEV_TO_SARIF = {
