@@ -1,20 +1,53 @@
 # aigis
 
-**Static analysis for AI agent safety.** Catches tools that can delete, execute, or exfiltrate without approval — before your agent ever runs.
+**Governance linting for AI agents.** Verify that your agents can't delete, execute, or exfiltrate without approval — before they ever run.
 
-> *Your agent has `subprocess.run(cmd, shell=True)` exposed as a tool with no approval gate. aigis finds that.*
+Aigis statically analyzes Python AI agent code and reports missing governance controls: approval gates on dangerous tools, consent wrappers on privileged operations, and execution budgets on agent loops. It works across LangChain, LangGraph, OpenAI Agents SDK, CrewAI, and AutoGen — with zero runtime dependencies.
 
-## Status: Public Alpha
+> **Public Alpha (v0.2.0)** — core rules are stable and validated against real-world repos. API surface and framework coverage may evolve. [Feedback welcome.](https://github.com/tyreamer/aigis/issues)
 
-aigis is in early public alpha (v0.2.0). The core rules are stable and validated against real-world repos, but the API surface, output format, and framework coverage may change. Feedback and issues welcome.
+---
 
-## Why This Matters
+## Why This Exists
 
-AI agents call tools. Tools delete files, run shell commands, send HTTP requests. If there is no approval gate, no consent wrapper, and no iteration limit — the agent can do whatever it wants, for as long as it wants.
+AI agents call tools. Tools can delete files, run shell commands, and send HTTP requests. Most agent frameworks make it easy to expose these capabilities — and easy to forget the controls.
 
-aigis catches these governance gaps before they reach production.
+Traditional SAST finds software vulnerabilities (SQL injection, XSS). Runtime AI safety tools catch bad behavior after deployment. Neither answers the question that matters before you ship:
 
-## The Finding That Explains the Category
+**Can this agent take high-impact actions without human approval, and can it run forever?**
+
+Aigis answers that question at build time, from code alone, with no LLM required.
+
+## What One Scan Gives You
+
+```bash
+$ aigis scan examples/unsafe_tool.py
+```
+```
+aigis v0.2.0 - AI Execution Governance Linter
+Scanning: examples/unsafe_tool.py
+
+  AIGIS001  ERROR  examples/unsafe_tool.py:13:0
+    Tool 'run_cmd' reaches side-effecting sink(s) [subprocess.run] without an approval gate
+    Evidence: sink=subprocess execution | approval=no | confidence=high
+    Fix: Add an approval decorator or wrap side-effecting calls with a confirmation check.
+
+  AIGIS002  ERROR  examples/unsafe_tool.py:13:0
+    Tool 'run_cmd' performs privileged operation(s) [subprocess.run] without a consent/policy wrapper
+    Evidence: sink=subprocess execution | approval=no | confidence=high
+    Fix: Add a consent/policy decorator (e.g. @requires_consent, @policy_check).
+
+Found 2 finding(s) (2 error, 0 warning)
+```
+
+From one scan, you get:
+- Every tool that can mutate, execute, or send data — and whether it has an approval gate
+- Every privileged operation (subprocess, system commands) — and whether it has a consent wrapper
+- Every agent entry point — and whether it has an iteration/budget limit
+- Structured evidence explaining *what* was found, *why* it matters, and *how* to fix it
+- Output in console, JSON, SARIF, or a visual HTML report
+
+## The Code That Defines the Category
 
 ```python
 @tool
@@ -24,29 +57,54 @@ def run_cmd(cmd: str, timeout: int = 30) -> str:
     return result.stdout
 ```
 
-```
-AIGIS001  ERROR  run_cmd — subprocess execution without approval gate
-AIGIS002  ERROR  run_cmd — privileged operation without consent wrapper
-```
+An AI agent tool that runs arbitrary shell commands with `shell=True` and agent-controlled input. No human approval. No consent policy. No iteration limit on the agent calling it.
 
-An AI agent tool that runs arbitrary shell commands with `shell=True`. No human approval. No consent policy. Both rules fire.
+Aigis fires both **AIGIS001** (no approval gate) and **AIGIS002** (no consent wrapper). This pattern was found in a real course repo with hundreds of forks.
+
+## Who This Is For
+
+- **AI platform teams** building tool-using agents for production
+- **AppSec engineers** adding agent code to their security review process
+- **Architecture leads** establishing governance standards for agentic systems
+- **Platform engineering** teams shipping LangGraph/CrewAI/OpenAI Agents infrastructure
+
+Aigis is built for teams where agents interact with real systems — not toy chatbots.
 
 ## Install
 
 ```bash
+pip install git+https://github.com/tyreamer/aigis.git
+```
+
+Or clone and install locally:
+
+```bash
+git clone https://github.com/tyreamer/aigis.git
+cd aigis
 pip install -e .
 ```
 
-## Quick Start
+## 5-Minute Quick Start
 
 ```bash
-aigis scan .                                   # scan current directory
-aigis scan examples/unsafe_tool.py             # scan a single file
-aigis scan . -f json                           # JSON output for CI
-aigis scan . -f html -o report.html            # visual HTML report
-aigis scan . -f sarif -o results.sarif         # SARIF for GitHub Code Scanning
-aigis baseline . -o .aigis-baseline.json       # create a baseline
-aigis scan . --baseline .aigis-baseline.json   # fail only on new findings
+# Scan your agent code
+aigis scan /path/to/your/project
+
+# Scan the included examples
+aigis scan examples/unsafe_tool.py       # fires AIGIS001 + AIGIS002
+aigis scan examples/unbounded_agent.py   # fires AIGIS001 + AIGIS003
+aigis scan examples/safe_agent.py        # clean — no findings
+
+# Generate a visual HTML report
+aigis scan /path/to/your/project -f html -o report.html
+
+# CI-ready outputs
+aigis scan . -f json                     # structured JSON
+aigis scan . -f sarif -o results.sarif   # GitHub Code Scanning
+
+# Baseline workflow: accept current findings, fail only on new ones
+aigis baseline . -o .aigis-baseline.json
+aigis scan . --baseline .aigis-baseline.json
 ```
 
 ## Rules
@@ -68,9 +126,11 @@ def delete_user(user_id: str):
     os.remove(f"/data/{user_id}.json")
 ```
 
+**Detected sinks:** `os.remove`, `shutil.rmtree`, `subprocess.run`, `os.system`, `requests.post`, `httpx.put`, `open()` with write mode, and more.
+
 ### AIGIS002 — Privileged Operation Without Consent Wrapper
 
-Fires when a tool calls subprocess/system commands without an explicit consent or policy wrapper. Generic `@requires_approval` is not sufficient — requires `@requires_consent`, `@policy_check`, or similar.
+Fires when a tool calls subprocess or system commands without an explicit consent or policy wrapper. Generic `@requires_approval` is not sufficient — requires `@requires_consent`, `@policy_check`, or similar.
 
 ```python
 # Flagged (generic approval is not consent-level):
@@ -103,6 +163,8 @@ agent = Agent(name="x", tools=[my_tool])
 Runner.run(agent, input="go", max_turns=10)
 ```
 
+Aigis checks budget controls at both construction time and execution time, including `Runner.run(max_turns=N)`, `app.invoke(config={"recursion_limit": N})`, `initiate_group_chat(max_rounds=N)`, and config variable resolution.
+
 ## Supported Frameworks
 
 | Framework | Tool Detection | Entry Points | Budget Controls |
@@ -112,6 +174,17 @@ Runner.run(agent, input="go", max_turns=10)
 | **OpenAI Agents** | `@function_tool` | `Agent()` | `max_turns` (constructor or `Runner.run`) |
 | **CrewAI** | `@tool` | `Crew()` | `max_iter`, `max_rpm` |
 | **AutoGen / AG2** | `register_for_llm` | `AssistantAgent`, `GroupChat` | `max_turns`, `max_round` |
+
+## Output Formats
+
+| Format | Use Case | Command |
+|--------|----------|---------|
+| **Console** | Local development | `aigis scan .` |
+| **JSON** | CI pipelines, scripting | `aigis scan . -f json` |
+| **SARIF** | GitHub Code Scanning | `aigis scan . -f sarif -o results.sarif` |
+| **HTML** | Reports, reviews, demos | `aigis scan . -f html -o report.html` |
+
+The HTML report is a self-contained dark-mode file with filters, expandable evidence cards, remediation guidance, and framework-specific context. No backend required — open it in any browser.
 
 ## Suppression
 
@@ -138,7 +211,7 @@ suppressions:
     reason: "Budget enforced by external orchestrator"
 ```
 
-## Baseline
+### Baseline
 
 Accept current findings, fail only on new ones:
 
@@ -149,14 +222,17 @@ aigis scan . --baseline .aigis-baseline.json
 
 Fingerprints use rule ID + file path + tool name (not line numbers), so they survive code edits.
 
-## Output Formats
+## How Aigis Is Different
 
-| Format | Use Case | Command |
-|--------|----------|---------|
-| **Console** | Local development | `aigis scan .` |
-| **JSON** | CI pipelines, scripting | `aigis scan . -f json` |
-| **SARIF** | GitHub Code Scanning | `aigis scan . -f sarif -o results.sarif` |
-| **HTML** | Reports, reviews, demos | `aigis scan . -f html -o report.html` |
+| | Traditional SAST | Runtime AI Safety | **Aigis** |
+|---|---|---|---|
+| **When** | Build time | Runtime | **Build time** |
+| **What** | Software vulns (SQLi, XSS) | Model behavior, guardrails | **Agent governance controls** |
+| **Checks for** | Code flaws | Harmful outputs | **Missing approval, consent, bounds** |
+| **Requires runtime** | No | Yes | **No** |
+| **AI/LLM needed** | No | Often | **No** |
+
+Aigis is not a prompt scanner, a model guardrail, or a vulnerability finder. It checks whether the structural controls that should exist in agent code — approval gates, consent wrappers, execution budgets — are actually present.
 
 ## What It Does NOT Detect
 
@@ -165,8 +241,30 @@ Fingerprints use rule ID + file path + tool name (not line numbers), so they sur
 - **Runtime behavior** — all analysis is static and deterministic
 - **SQL mutations** — `cursor.execute()` is too ambiguous without query analysis
 - **Dynamic tool registration** — runtime reflection / metaprogramming
-- **Non-Python code** — Python source files only
+- **Non-Python code** — Python only
 - **LLM-based judgment** — purely pattern-based, no semantic understanding
+
+## Roadmap
+
+**What works well today:**
+- Tool detection and sink analysis across 6 frameworks
+- Approval/consent/budget governance checks
+- Constructor-time and execution-time budget detection
+- Suppression, baselines, and 4 output formats
+
+**What's next:**
+- Cross-file call graph support
+- Data-flow tracking for indirect sinks
+- Posture summary (aggregate governance metrics per scan)
+- PyPI package publishing (`pip install aigis`)
+- Published GitHub Action
+- Additional framework depth (LlamaIndex, Google ADK)
+
+**Explicitly out of scope for now:**
+- TypeScript/JavaScript support
+- Runtime monitoring
+- LLM-based detection
+- Cloud dashboard or hosted service
 
 ## Design Principles
 
@@ -175,3 +273,12 @@ Fingerprints use rule ID + file path + tool name (not line numbers), so they sur
 - **Low noise** — false negatives over false positives
 - **Missing guard is first-class** — the absence of a control is the finding
 - **Evidence-first** — every finding explains what, why, and how to fix
+
+## Feedback
+
+Aigis is in public alpha. If you're building tool-using agents and want governance visibility before production, we want to hear from you.
+
+- [Open an issue](https://github.com/tyreamer/aigis/issues) with findings, false positives, or framework gaps
+- [Start a discussion](https://github.com/tyreamer/aigis/discussions) about your governance workflow
+
+We're especially interested in feedback from teams shipping agents with file access, network access, or subprocess execution.
