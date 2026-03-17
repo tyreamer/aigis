@@ -13,9 +13,6 @@ on:
 jobs:
   aigis:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
     steps:
       - uses: actions/checkout@v4
 
@@ -27,12 +24,7 @@ jobs:
         run: pip install -e .
 
       - name: Run Aigis scan
-        run: |
-          aigis scan . -f sarif -o results.sarif || true
+        run: aigis scan . -f console
 
-      - name: Upload SARIF to GitHub Security
-        if: hashFiles('results.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: results.sarif
-          category: aigis
+      - name: Run tests
+        run: python -m pytest tests/ -q
