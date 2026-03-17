@@ -1,0 +1,8 @@
+# Aigis project-level configuration
+#
+# The examples/ directory contains intentionally unsafe code
+# used for demos and documentation. Suppress findings there.
+
+suppressions:
+  - path: "**/examples/**"
+    reason: "Demo fixtures — intentionally unsafe for documentation"
