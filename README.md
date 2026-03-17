@@ -1,6 +1,10 @@
-# aigis
+<p align="center">
+  <img src="docs/logo-200.png" alt="aigis" width="120">
+</p>
 
-**Static analysis for AI agent safety.** Catches tools that can delete, execute, or exfiltrate without approval — before your agent ever runs.
+<h1 align="center">aigis</h1>
+
+<p align="center"><strong>Static analysis for AI agent safety.</strong> Catches tools that can delete, execute, or exfiltrate without approval — before your agent ever runs.</p>
 
 > *Your agent has `subprocess.run(cmd, shell=True)` exposed as a tool with no approval gate. aigis finds that.*
 
