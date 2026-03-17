@@ -12,6 +12,7 @@ from .baseline import create_baseline, filter_by_baseline, load_baseline, save_b
 from .config import AigisConfig
 from .models import Severity, SEVERITY_RANK
 from .output import format_console, format_json, format_sarif
+from .output_html import format_html
 from .rules import run_all_rules
 from .suppression import SuppressionFilter
 
@@ -22,6 +23,7 @@ class OutputFormat(str, Enum):
     console = "console"
     json = "json"
     sarif = "sarif"
+    html = "html"
 
 
 class SeverityThreshold(str, Enum):
@@ -34,6 +36,7 @@ _FORMATTERS = {
     OutputFormat.console: format_console,
     OutputFormat.json: format_json,
     OutputFormat.sarif: format_sarif,
+    OutputFormat.html: format_html,
 }
 
 _THRESHOLD_MAP = {

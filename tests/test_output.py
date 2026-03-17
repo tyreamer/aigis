@@ -4,6 +4,7 @@ import json
 
 from aigis.analyzer import PythonAnalyzer
 from aigis.output import format_console, format_json, format_sarif
+from aigis.output_html import format_html
 from aigis.rules import run_all_rules
 
 
@@ -116,3 +117,38 @@ def test_sarif_has_evidence_in_properties(fixtures_dir):
     for result in data["runs"][0]["results"]:
         assert "properties" in result
         assert "evidence" in result["properties"]
+
+
+# -- HTML output ---------------------------------------------------------------
+
+def test_html_output_is_valid(fixtures_dir):
+    results = _scan(fixtures_dir / "unsafe_no_approval.py")
+    text = format_html(results, str(fixtures_dir / "unsafe_no_approval.py"))
+    assert "<!DOCTYPE html>" in text
+    assert "aigis" in text
+    assert "AEG001" in text
+    assert "FINDINGS" in text  # JS data variable
+
+
+def test_html_output_has_findings_data(fixtures_dir):
+    results = _scan(fixtures_dir / "unsafe_no_approval.py")
+    text = format_html(results, str(fixtures_dir / "unsafe_no_approval.py"))
+    assert "delete_user_data" in text
+    assert "send_notification" in text
+    assert "subject_name" in text
+
+
+def test_html_empty_findings(fixtures_dir):
+    results = _scan(fixtures_dir / "safe_guarded.py")
+    text = format_html(results, str(fixtures_dir / "safe_guarded.py"))
+    assert "<!DOCTYPE html>" in text
+    assert '"total": 0' in text
+
+
+def test_html_output_self_contained(fixtures_dir):
+    """HTML report should have no external dependencies."""
+    results = _scan(fixtures_dir / "unsafe_no_approval.py")
+    text = format_html(results, str(fixtures_dir / "unsafe_no_approval.py"))
+    # No external CSS/JS/font links
+    assert "https://" not in text.split("<script>")[0].split("</style>")[0]
+    assert "<link" not in text.lower().split("<style>")[0]

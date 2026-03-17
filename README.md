@@ -173,6 +173,11 @@ See `.github/workflows/aigis.yml` for a GitHub Actions workflow that:
 - **Console** — human-readable with evidence, remediation, and per-rule summary
 - **JSON** — structured findings with full evidence objects
 - **SARIF v2.1.0** — for GitHub Code Scanning, VS Code SARIF Viewer, etc.
+- **HTML** — self-contained dark-mode report with filters, evidence cards, and remediation
+
+```bash
+aeg scan . -f html -o report.html    # open in any browser
+```
 
 ## What It Does NOT Detect
 
