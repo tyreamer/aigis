@@ -1,4 +1,4 @@
-"""CLI entry point — `aeg scan <path>`."""
+"""CLI entry point — `aigis scan <path>`."""
 
 from enum import Enum
 from pathlib import Path

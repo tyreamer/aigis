@@ -4,7 +4,7 @@ This agent has:
 - A consent wrapper on the privileged tool (satisfies AEG001 + AEG002)
 - An execution budget via max_iterations (satisfies AEG003)
 
-Run:  aeg scan examples/safe_agent.py
+Run:  aigis scan examples/safe_agent.py
 Expected output:  No findings.
 """
 from langchain.tools import tool

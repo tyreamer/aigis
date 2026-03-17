@@ -4,7 +4,7 @@ This agent tool executes arbitrary shell commands from agent-controlled
 input — with no human approval step. Aigis flags this as AEG001 (missing
 approval gate) and AEG002 (privileged operation without consent wrapper).
 
-Run:  aeg scan examples/unsafe_tool.py
+Run:  aigis scan examples/unsafe_tool.py
 """
 from langchain.tools import tool
 

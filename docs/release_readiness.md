@@ -11,7 +11,7 @@ The scanner is functionally complete for its first wedge: detecting unsafe auton
 - **AEG001/AEG002 precision: 100%** — zero false positives across 15 real-world repos (2,355 files)
 - **AEG003 precision: ~85-90%** — after AG2 fix, remaining findings are genuinely unbounded patterns
 - **6 frameworks supported**: LangChain, LangGraph, OpenAI Agents, CrewAI, AutoGen/AG2, custom patterns
-- **CLI ergonomics**: clean `aeg scan/baseline` commands, `--format`, `--baseline`, `--config`
+- **CLI ergonomics**: clean `aigis scan/baseline` commands, `--format`, `--baseline`, `--config`
 - **Output formats**: console, JSON, SARIF (GitHub Code Scanning compatible)
 - **Suppression**: inline comments + YAML config
 - **Baseline**: fingerprint-based, survives line-number shifts

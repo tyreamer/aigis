@@ -41,22 +41,22 @@ pip install -e .
 
 ```bash
 # Scan a file or directory
-aeg scan .
+aigis scan .
 
 # Scan the included examples
-aeg scan examples/unsafe_tool.py
-aeg scan examples/unbounded_agent.py
-aeg scan examples/safe_agent.py       # clean — no findings
+aigis scan examples/unsafe_tool.py
+aigis scan examples/unbounded_agent.py
+aigis scan examples/safe_agent.py       # clean — no findings
 
 # JSON output for CI
-aeg scan . -f json
+aigis scan . -f json
 
 # SARIF for GitHub Code Scanning
-aeg scan . -f sarif -o results.sarif
+aigis scan . -f sarif -o results.sarif
 
 # Create a baseline (accept current findings, fail only on new ones)
-aeg baseline . -o .aigis-baseline.json
-aeg scan . --baseline .aigis-baseline.json
+aigis baseline . -o .aigis-baseline.json
+aigis scan . --baseline .aigis-baseline.json
 ```
 
 ## Rules
@@ -155,8 +155,8 @@ See `examples/.aigis.yaml` for a complete example.
 Accept current findings, fail only on new ones:
 
 ```bash
-aeg baseline . -o .aigis-baseline.json
-aeg scan . --baseline .aigis-baseline.json
+aigis baseline . -o .aigis-baseline.json
+aigis scan . --baseline .aigis-baseline.json
 ```
 
 Fingerprints use rule ID + file path + tool name (not line numbers), so they survive minor code edits.
@@ -176,7 +176,7 @@ See `.github/workflows/aigis.yml` for a GitHub Actions workflow that:
 - **HTML** — self-contained dark-mode report with filters, evidence cards, and remediation
 
 ```bash
-aeg scan . -f html -o report.html    # open in any browser
+aigis scan . -f html -o report.html    # open in any browser
 ```
 
 ## What It Does NOT Detect

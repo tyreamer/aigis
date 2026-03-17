@@ -29,6 +29,7 @@ Repository = "https://github.com/tyreamer/aigis"
 Issues = "https://github.com/tyreamer/aigis/issues"
 
 [project.scripts]
+aigis = "aigis.cli:app"
 aeg = "aigis.cli:app"
 
 [tool.hatch.build.targets.wheel]

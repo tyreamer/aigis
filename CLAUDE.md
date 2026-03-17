@@ -22,14 +22,14 @@ Rekall tracks session context, failed attempts, and decisions across conversatio
 
 ```bash
 pip install -e .          # install in dev mode
-aeg scan <path>           # scan a file or directory
-aeg scan . -f json        # JSON output
-aeg scan . -f sarif       # SARIF output
-aeg scan . -o report.json -f json   # write to file
-aeg scan . --config .aigis.yaml     # use config for suppressions
-aeg scan . --baseline bl.json       # fail only on new findings
-aeg scan . -s warning               # exit 1 on warnings too (default: error only)
-aeg baseline . -o bl.json           # create baseline from current findings
+aigis scan <path>           # scan a file or directory
+aigis scan . -f json        # JSON output
+aigis scan . -f sarif       # SARIF output
+aigis scan . -o report.json -f json   # write to file
+aigis scan . --config .aigis.yaml     # use config for suppressions
+aigis scan . --baseline bl.json       # fail only on new findings
+aigis scan . -s warning               # exit 1 on warnings too (default: error only)
+aigis baseline . -o bl.json           # create baseline from current findings
 ```
 
 ## Testing

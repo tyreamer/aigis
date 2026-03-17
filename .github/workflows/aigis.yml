@@ -25,7 +25,7 @@ jobs:
         run: pip install git+https://github.com/YOUR_ORG/aigis.git
 
       - name: Run Aigis scan
-        run: aeg scan . -f sarif -o results.sarif
+        run: aigis scan . -f sarif -o results.sarif
 
       - name: Upload SARIF to GitHub Security
         if: always()
@@ -36,4 +36,4 @@ jobs:
 
       # Optional: fail only on new findings using a baseline
       # - name: Run Aigis with baseline
-      #   run: aeg scan . --baseline .aigis-baseline.json
+      #   run: aigis scan . --baseline .aigis-baseline.json
