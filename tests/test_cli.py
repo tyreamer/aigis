@@ -12,7 +12,7 @@ runner = CliRunner()
 def test_scan_unsafe_returns_exit_1(fixtures_dir):
     result = runner.invoke(app, ["scan", str(fixtures_dir / "unsafe_no_approval.py")])
     assert result.exit_code == 1
-    assert "AEG001" in result.output
+    assert "AIGIS001" in result.output
 
 
 def test_scan_safe_returns_exit_0(fixtures_dir):
@@ -49,13 +49,13 @@ def test_version_command():
 
 def test_scan_directory(fixtures_dir):
     result = runner.invoke(app, ["scan", str(fixtures_dir)])
-    assert "AEG001" in result.output
+    assert "AIGIS001" in result.output
 
 
 # -- Severity threshold -------------------------------------------------------
 
 def test_severity_threshold_warning_exits_1(fixtures_dir):
-    """unsafe_no_budget has only warnings (AEG003) — with threshold=warning, exit 1."""
+    """unsafe_no_budget has only warnings (AIGIS003) — with threshold=warning, exit 1."""
     result = runner.invoke(app, [
         "scan", str(fixtures_dir / "unsafe_no_budget.py"),
         "-s", "warning",
@@ -108,7 +108,7 @@ def test_scan_with_config_suppression(fixtures_dir, tmp_path):
     config_file = tmp_path / ".aigis.yaml"
     config_file.write_text(
         "suppressions:\n"
-        "  - rule: AEG001\n"
+        "  - rule: AIGIS001\n"
         "    reason: test suppression\n"
     )
     result = runner.invoke(app, [

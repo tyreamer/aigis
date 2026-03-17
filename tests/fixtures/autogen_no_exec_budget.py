@@ -1,7 +1,7 @@
 """Fixture: AutoGen / AG2 — no budget anywhere.
 
 AssistantAgent with no budget on constructor or execution call.
-AEG003 SHOULD fire.
+AIGIS003 SHOULD fire.
 """
 from autogen import AssistantAgent, GroupChat, GroupChatManager
 

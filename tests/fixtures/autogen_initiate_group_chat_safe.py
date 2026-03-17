@@ -1,7 +1,7 @@
 """Fixture: AG2 initiate_group_chat with max_rounds — safe.
 
 All agents in this file are bounded by the initiate_group_chat call.
-AEG003 should NOT fire.
+AIGIS003 should NOT fire.
 """
 from autogen import AssistantAgent, ConversableAgent
 from autogen.agentchat import initiate_group_chat

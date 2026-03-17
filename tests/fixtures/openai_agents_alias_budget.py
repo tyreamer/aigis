@@ -1,7 +1,7 @@
 """Fixture: OpenAI Agents SDK — budget via aliased variable.
 
 agent is aliased to 'a', then Runner.run(a, max_turns=5).
-AEG003 should NOT fire.
+AIGIS003 should NOT fire.
 """
 from agents import Agent, Runner
 

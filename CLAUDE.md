@@ -37,7 +37,7 @@ aigis baseline . -o bl.json           # create baseline from current findings
 ```bash
 python -m pytest tests/ -v              # all tests (80 tests)
 python -m pytest tests/test_rules.py    # just rule tests
-python -m pytest tests/ -k "aeg001"     # single rule by keyword
+python -m pytest tests/ -k "aigis001"     # single rule by keyword
 python -m pytest tests/test_suppression.py  # suppression tests
 python -m pytest tests/test_baseline.py     # baseline tests
 ```
@@ -60,9 +60,9 @@ src/aigis/
     autogen.py     #   AutoGen/AG2: AssistantAgent, GroupChat, max_turns, max_round
     custom.py      #   Generic approval/consent/tool-registration patterns
   rules/           # One file per rule, each exports check(graph) -> RuleResult
-    aeg001_unguarded_mutating.py
-    aeg002_privileged_no_consent.py
-    aeg003_missing_budget.py
+    aigis001_unguarded_mutating.py
+    aigis002_privileged_no_consent.py
+    aigis003_missing_budget.py
   config.py        # YAML config loader (.aigis.yaml)
   suppression.py   # Inline comment + config-based suppression filtering
   baseline.py      # Baseline create/load/filter (fingerprint-based)
@@ -77,10 +77,10 @@ src/aigis/
 - **ExecutionGraph**: IR with typed nodes (TOOL_DEF, ENTRY_POINT, APPROVAL_GATE, SINK, BUDGET_CONTROL) and edges (CALLS, REGISTERS, WRAPS)
 - **Evidence**: Structured explanation on each Finding (subject_name, sink_type, approval_signal_found/kind, budget_signal_found, confidence, rationale, remediation)
 - **Sink catalog**: `MUTATING_SINKS` dict in `analyzer.py` maps `(module, method)` pairs to descriptions. `PRIVILEGED_SINKS` is the subset requiring consent/policy wrappers.
-- **Approval vs Consent**: AEG001 accepts any approval pattern (decorators/calls with "approve", "confirm", etc.). AEG002 requires stricter consent/policy patterns ("policy", "consent"). A generic `@requires_approval` satisfies AEG001 but not AEG002.
-- **Execution-time budgets**: AEG003 checks both constructor kwargs (e.g. `Agent(max_turns=N)`) and execution-time calls (e.g. `Runner.run(agent, max_turns=N)`, `app.invoke(input, config={"recursion_limit": N})`). Framework modules declare `EXECUTION_BUDGET_PATTERNS` for this.
+- **Approval vs Consent**: AIGIS001 accepts any approval pattern (decorators/calls with "approve", "confirm", etc.). AIGIS002 requires stricter consent/policy patterns ("policy", "consent"). A generic `@requires_approval` satisfies AIGIS001 but not AIGIS002.
+- **Execution-time budgets**: AIGIS003 checks both constructor kwargs (e.g. `Agent(max_turns=N)`) and execution-time calls (e.g. `Runner.run(agent, max_turns=N)`, `app.invoke(input, config={"recursion_limit": N})`). Framework modules declare `EXECUTION_BUDGET_PATTERNS` for this.
 - **TriState**: `YES/NO/UNKNOWN` — unknown does not fail by default.
-- **Suppression**: Inline comments (`# aigis: disable=AEG001` or `# noqa: AEG001`) and YAML config (by rule, path glob, symbol name).
+- **Suppression**: Inline comments (`# aigis: disable=AIGIS001` or `# noqa: AIGIS001`) and YAML config (by rule, path glob, symbol name).
 - **Baseline**: Fingerprint = sha256(rule_id + relative_path + subject_name). Survives line-number shifts.
 
 ### Adding a New Framework

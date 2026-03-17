@@ -1,4 +1,4 @@
-"""AEG003: Missing max-iterations / execution budget.
+"""AIGIS003: Missing max-iterations / execution budget.
 
 Fires when an agent entry point (AgentExecutor, Agent, Crew, graph.compile, etc.)
 is not linked to any execution budget — either at construction time (e.g.
@@ -11,7 +11,7 @@ from __future__ import annotations
 from ..graph import ExecutionGraph
 from ..models import EdgeKind, Evidence, Finding, NodeKind, RuleResult, Severity, TriState
 
-RULE_ID = "AEG003"
+RULE_ID = "AIGIS003"
 
 # Map entry point names to framework descriptions for evidence
 _FRAMEWORK_HINTS: dict[str, tuple[str, str]] = {

@@ -1,8 +1,8 @@
 """Example: Properly governed agent — no findings.
 
 This agent has:
-- A consent wrapper on the privileged tool (satisfies AEG001 + AEG002)
-- An execution budget via max_iterations (satisfies AEG003)
+- A consent wrapper on the privileged tool (satisfies AIGIS001 + AIGIS002)
+- An execution budget via max_iterations (satisfies AIGIS003)
 
 Run:  aigis scan examples/safe_agent.py
 Expected output:  No findings.

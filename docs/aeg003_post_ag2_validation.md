@@ -1,4 +1,4 @@
-# AEG003 Post-AG2 Fix Validation
+# AIGIS003 Post-AG2 Fix Validation
 
 ## What Changed
 
@@ -28,7 +28,7 @@ Previous random-sample audit found 4/20 false positives, of which 3 were AG2 `in
 - Remaining FP type: AG2 `nested_chats` config dicts (arguable, not actionable)
 - **Estimated precision: ~85-90%** (up from ~80%)
 
-## Remaining AEG003 Ambiguity Clusters
+## Remaining AIGIS003 Ambiguity Clusters
 
 1. **CrewAI Crew() without max_iter** (31 findings in crewAI-examples): Correct findings — CrewAI convention doesn't use `max_iter`, but the governance gap is real.
 
@@ -38,4 +38,4 @@ Previous random-sample audit found 4/20 false positives, of which 3 were AG2 `in
 
 ## Conclusion
 
-The concentrated AG2 false positive cluster is resolved. AEG003 precision is now materially higher on the repo that had the worst noise. The remaining findings across all repos appear to be genuinely unbounded execution patterns.
+The concentrated AG2 false positive cluster is resolved. AIGIS003 precision is now materially higher on the repo that had the worst noise. The remaining findings across all repos appear to be genuinely unbounded execution patterns.

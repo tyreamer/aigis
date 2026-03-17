@@ -2,7 +2,7 @@
 
 This agent has tools that can mutate the filesystem, but there is no
 limit on how many turns/iterations the agent can take. Aigis flags
-this as AEG003 (missing execution budget).
+this as AIGIS003 (missing execution budget).
 
 Run:  aigis scan examples/unbounded_agent.py
 """

@@ -19,9 +19,9 @@ aigis now detects governance gaps across all major Python agent frameworks:
 | **AutoGen / AG2** | `AssistantAgent`/`GroupChat` budgets, `initiate_group_chat` orchestration budgets |
 | **Custom** | `register_tool()` patterns, approval/consent decorator matching |
 
-### Execution-Time Budget Detection (AEG003)
+### Execution-Time Budget Detection (AIGIS003)
 
-AEG003 now checks for budget controls at both construction and execution time:
+AIGIS003 now checks for budget controls at both construction and execution time:
 
 ```python
 # Detected as bounded (clean):
@@ -52,7 +52,7 @@ Test files (`tests/`, `test_*.py`, `*_test.py`, `conftest.py`) are excluded from
 
 ### Framework-Specific Evidence
 
-AEG003 findings now include the framework name and targeted remediation:
+AIGIS003 findings now include the framework name and targeted remediation:
 
 ```
 [OpenAI Agents SDK] Entry point 'Agent' creates an agent execution loop
@@ -67,10 +67,10 @@ Example GitHub Actions workflow included at `.github/workflows/aigis.yml` with S
 
 ## Quality
 
-- **AEG001/AEG002 precision: 100%** across 15 real-world repos
-- **AEG003 precision: ~85-90%** after execution-time budget detection
+- **AIGIS001/AIGIS002 precision: 100%** across 15 real-world repos
+- **AIGIS003 precision: ~85-90%** after execution-time budget detection
 - **113 tests**, all passing
-- **Zero false positives** on AEG001/AEG002
+- **Zero false positives** on AIGIS001/AIGIS002
 
 ## Install
 

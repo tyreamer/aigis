@@ -23,12 +23,12 @@ def test_fingerprint_differs_by_rule(fixtures_dir):
     """Different rule IDs should produce different fingerprints."""
     from aigis.models import Evidence, Finding, Location, Severity, TriState
     f1 = Finding(
-        rule_id="AEG001", message="x", severity=Severity.ERROR,
+        rule_id="AIGIS001", message="x", severity=Severity.ERROR,
         location=Location(file="a.py", line=1),
         evidence=Evidence(subject_name="tool1"),
     )
     f2 = Finding(
-        rule_id="AEG002", message="x", severity=Severity.ERROR,
+        rule_id="AIGIS002", message="x", severity=Severity.ERROR,
         location=Location(file="a.py", line=1),
         evidence=Evidence(subject_name="tool1"),
     )

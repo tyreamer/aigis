@@ -21,5 +21,5 @@ def write_data(state):
 
 graph = StateGraph(dict)
 graph.add_node("writer", write_data)
-# No recursion_limit — should fire AEG003
+# No recursion_limit — should fire AIGIS003
 app = graph.compile()

@@ -1,7 +1,7 @@
 """Fixture: LangGraph with interrupt() function — safe HITL pattern.
 
 Uses interrupt() from langgraph.types for human-in-the-loop approval.
-This should be recognized as an approval signal and satisfy AEG001.
+This should be recognized as an approval signal and satisfy AIGIS001.
 """
 from langgraph.graph import StateGraph
 from langgraph.types import interrupt

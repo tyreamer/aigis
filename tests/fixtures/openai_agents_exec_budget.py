@@ -1,7 +1,7 @@
 """Fixture: OpenAI Agents SDK — budget at execution time.
 
 Agent() has no max_turns on constructor, but Runner.run() does.
-AEG003 should NOT fire.
+AIGIS003 should NOT fire.
 """
 from agents import Agent, Runner, function_tool
 

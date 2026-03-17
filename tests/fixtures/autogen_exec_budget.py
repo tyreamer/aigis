@@ -1,7 +1,7 @@
 """Fixture: AutoGen / AG2 — budget at execution time.
 
 AssistantAgent has no budget on constructor, but initiate_chat has max_turns.
-GroupChat has max_round. AEG003 should NOT fire on any of these.
+GroupChat has max_round. AIGIS003 should NOT fire on any of these.
 """
 from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
 

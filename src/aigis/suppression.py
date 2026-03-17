@@ -8,8 +8,8 @@ from pathlib import Path
 
 from .models import Finding
 
-# Matches:  # aigis: disable=AEG001  or  # noqa: AEG001
-# Optional reason after --:  # aigis: disable=AEG001 -- known safe
+# Matches:  # aigis: disable=AIGIS001  or  # noqa: AIGIS001
+# Optional reason after --:  # aigis: disable=AIGIS001 -- known safe
 INLINE_RE = re.compile(
     r"#\s*(?:aigis:\s*disable|noqa)\s*[=:]\s*([A-Z0-9_,\s]+?)(?:\s+--\s*(.+))?$"
 )

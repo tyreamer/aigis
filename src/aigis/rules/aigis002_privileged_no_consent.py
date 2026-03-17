@@ -1,4 +1,4 @@
-"""AEG002: Privileged tool lacks explicit consent/policy wrapper.
+"""AIGIS002: Privileged tool lacks explicit consent/policy wrapper.
 
 Fires when a tool performs privileged operations (subprocess, OS commands)
 without an explicit consent or policy wrapper.  A generic approval gate
@@ -10,7 +10,7 @@ from __future__ import annotations
 from ..graph import ExecutionGraph
 from ..models import EdgeKind, Evidence, Finding, NodeKind, RuleResult, Severity, TriState
 
-RULE_ID = "AEG002"
+RULE_ID = "AIGIS002"
 
 
 def check(graph: ExecutionGraph) -> RuleResult:

@@ -43,7 +43,7 @@ def format_console(
                     parts.append(f"approval={ev.approval_signal_found.value}")
                 if ev.approval_signal_kind:
                     parts.append(f"via={ev.approval_signal_kind}")
-                if ev.budget_signal_found.value != "unknown" and f.rule_id == "AEG003":
+                if ev.budget_signal_found.value != "unknown" and f.rule_id == "AIGIS003":
                     parts.append(f"budget={ev.budget_signal_found.value}")
                 parts.append(f"confidence={ev.confidence}")
                 lines.append(f"    Evidence: {' | '.join(parts)}")
@@ -127,15 +127,15 @@ def _finding_to_json(f: Finding) -> dict:
 SARIF_SCHEMA = "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json"
 
 RULE_METADATA = {
-    "AEG001": {
+    "AIGIS001": {
         "name": "UnguardedMutatingSink",
         "shortDescription": "Mutating tool reachable without approval gate",
     },
-    "AEG002": {
+    "AIGIS002": {
         "name": "PrivilegedNoConsent",
         "shortDescription": "Privileged tool lacks explicit consent/policy wrapper",
     },
-    "AEG003": {
+    "AIGIS003": {
         "name": "MissingExecutionBudget",
         "shortDescription": "Missing max-iterations / execution budget",
     },

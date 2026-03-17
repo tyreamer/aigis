@@ -8,8 +8,8 @@ The scanner is functionally complete for its first wedge: detecting unsafe auton
 
 ## What is solid
 
-- **AEG001/AEG002 precision: 100%** — zero false positives across 15 real-world repos (2,355 files)
-- **AEG003 precision: ~85-90%** — after AG2 fix, remaining findings are genuinely unbounded patterns
+- **AIGIS001/AIGIS002 precision: 100%** — zero false positives across 15 real-world repos (2,355 files)
+- **AIGIS003 precision: ~85-90%** — after AG2 fix, remaining findings are genuinely unbounded patterns
 - **6 frameworks supported**: LangChain, LangGraph, OpenAI Agents, CrewAI, AutoGen/AG2, custom patterns
 - **CLI ergonomics**: clean `aigis scan/baseline` commands, `--format`, `--baseline`, `--config`
 - **Output formats**: console, JSON, SARIF (GitHub Code Scanning compatible)
@@ -44,14 +44,14 @@ The scanner is functionally complete for its first wedge: detecting unsafe auton
 def run_cmd(cmd: str):
     subprocess.run(cmd, shell=True)
 ```
-Both AEG001 and AEG002 fire. Universally understood risk: agent-controlled shell execution without approval. Discovered in a real course repo with hundreds of forks.
+Both AIGIS001 and AIGIS002 fire. Universally understood risk: agent-controlled shell execution without approval. Discovered in a real course repo with hundreds of forks.
 
 ### 2. Unbounded agent loop
 ```python
 agent = Agent(name="writer", tools=[write_file])
 Runner.run(agent, input="Create 100 config files")  # no max_turns
 ```
-AEG003 fires. The agent can write files indefinitely. Discovered that only 4/186 Runner.run calls in the OpenAI SDK examples use `max_turns`.
+AIGIS003 fires. The agent can write files indefinitely. Discovered that only 4/186 Runner.run calls in the OpenAI SDK examples use `max_turns`.
 
 ### 3. Clean scan on governed code
 ```python
@@ -70,4 +70,4 @@ Zero findings. Shows that Aigis doesn't cry wolf — properly governed code pass
 
 2. **No data-flow tracking** — if a tool delegates to a helper function that calls `subprocess.run`, Aigis won't see the sink. The sink must be in the tool function body.
 
-3. **AEG003 volume on large repos** — in repos with many agent definitions (hundreds of `Agent()` calls), AEG003 can produce high volume. This is usually correct (the code genuinely lacks budgets) but can feel noisy. Workaround: baseline + suppress by path.
+3. **AIGIS003 volume on large repos** — in repos with many agent definitions (hundreds of `Agent()` calls), AIGIS003 can produce high volume. This is usually correct (the code genuinely lacks budgets) but can feel noisy. Workaround: baseline + suppress by path.

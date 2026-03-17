@@ -85,12 +85,12 @@ Needs: PyPI account, build pipeline, version automation.
 **Labels:** `enhancement`, `scope:rules`
 
 **Body:**
-`cursor.execute("DELETE FROM users WHERE ...")` is a mutating operation that should be flagged by AEG001, but `cursor.execute` is too ambiguous without analyzing the SQL string (it could be a SELECT).
+`cursor.execute("DELETE FROM users WHERE ...")` is a mutating operation that should be flagged by AIGIS001, but `cursor.execute` is too ambiguous without analyzing the SQL string (it could be a SELECT).
 
 Options:
 - Flag all `cursor.execute` with a lower confidence
 - Parse literal SQL strings for mutation keywords
-- Add as a separate rule (AEG004?)
+- Add as a separate rule (AIGIS004?)
 
 ---
 

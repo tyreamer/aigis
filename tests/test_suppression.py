@@ -34,32 +34,32 @@ def test_inline_noqa_style_suppresses(fixtures_dir):
 
 
 def test_inline_suppression_does_not_affect_other_rules(fixtures_dir):
-    """AEG001 is suppressed but other rules should still fire."""
+    """AIGIS001 is suppressed but other rules should still fire."""
     findings = _findings_for(fixtures_dir / "inline_suppression.py")
     sf = SuppressionFilter()
     active, suppressed = sf.filter(findings)
-    # Only AEG001 findings should be suppressed
+    # Only AIGIS001 findings should be suppressed
     for f in suppressed:
-        assert f.rule_id == "AEG001"
+        assert f.rule_id == "AIGIS001"
 
 
 # -- Config suppression ------------------------------------------------------
 
 def test_config_suppression_by_rule(fixtures_dir):
     findings = _findings_for(fixtures_dir / "unsafe_no_approval.py")
-    config_suppressions = [{"rule": "AEG001", "reason": "accepted risk"}]
+    config_suppressions = [{"rule": "AIGIS001", "reason": "accepted risk"}]
     sf = SuppressionFilter(config_suppressions)
     active, suppressed = sf.filter(findings)
-    # All AEG001 findings should be suppressed
+    # All AIGIS001 findings should be suppressed
     for f in suppressed:
-        assert f.rule_id == "AEG001"
+        assert f.rule_id == "AIGIS001"
     for f in active:
-        assert f.rule_id != "AEG001"
+        assert f.rule_id != "AIGIS001"
 
 
 def test_config_suppression_by_symbol(fixtures_dir):
     findings = _findings_for(fixtures_dir / "unsafe_no_approval.py")
-    config_suppressions = [{"rule": "AEG001", "symbol": "delete_user_data"}]
+    config_suppressions = [{"rule": "AIGIS001", "symbol": "delete_user_data"}]
     sf = SuppressionFilter(config_suppressions)
     active, suppressed = sf.filter(findings)
     assert any(f.evidence.subject_name == "delete_user_data" for f in suppressed if f.evidence)

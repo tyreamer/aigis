@@ -25,8 +25,8 @@ def run_cmd(cmd: str, timeout: int = 30) -> str:
 ```
 
 ```
-AEG001  ERROR  run_cmd — subprocess execution without approval gate
-AEG002  ERROR  run_cmd — privileged operation without consent wrapper
+AIGIS001  ERROR  run_cmd — subprocess execution without approval gate
+AIGIS002  ERROR  run_cmd — privileged operation without consent wrapper
 ```
 
 An AI agent tool that runs arbitrary shell commands with `shell=True`. No human approval. No consent policy. Both rules fire.
@@ -61,7 +61,7 @@ aigis scan . --baseline .aigis-baseline.json
 
 ## Rules
 
-### AEG001 — Mutating Tool Without Approval Gate
+### AIGIS001 — Mutating Tool Without Approval Gate
 
 Fires when a tool performs side effects (file I/O, subprocess, HTTP mutations) with no approval mechanism.
 
@@ -78,7 +78,7 @@ def delete_user(user_id: str):
     os.remove(f"/data/{user_id}.json")
 ```
 
-### AEG002 — Privileged Operation Without Consent Wrapper
+### AIGIS002 — Privileged Operation Without Consent Wrapper
 
 Fires when a tool calls subprocess/system commands without an explicit consent or policy wrapper. Generic `@requires_approval` is not sufficient — this rule requires `@requires_consent`, `@policy_check`, or similar.
 
@@ -96,7 +96,7 @@ def run_command(cmd: str):
     subprocess.run(cmd, shell=True)
 ```
 
-### AEG003 — Missing Execution Budget
+### AIGIS003 — Missing Execution Budget
 
 Fires when an agent entry point has no iteration or budget limit — neither on the constructor nor on any execution call in the same file.
 
@@ -128,7 +128,7 @@ Runner.run(agent, input="go", max_turns=10)  # budget at execution time
 ### Inline
 
 ```python
-@tool  # aigis: disable=AEG001 -- reviewed and accepted risk
+@tool  # aigis: disable=AIGIS001 -- reviewed and accepted risk
 def my_tool():
     os.remove(path)
 ```
@@ -139,11 +139,11 @@ Create `.aigis.yaml` in your project root:
 
 ```yaml
 suppressions:
-  - rule: AEG001
+  - rule: AIGIS001
     path: "scripts/**"
     reason: "Internal tooling with runtime approval"
 
-  - rule: AEG003
+  - rule: AIGIS003
     symbol: my_agent
     reason: "Budget enforced by external orchestrator"
 ```

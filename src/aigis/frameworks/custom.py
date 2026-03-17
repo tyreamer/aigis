@@ -7,7 +7,7 @@ APPROVAL_DECORATOR_PATTERNS = {
     "human_in_the_loop",
 }
 
-# Stricter subset: consent/policy wrappers (for AEG002)
+# Stricter subset: consent/policy wrappers (for AIGIS002)
 CONSENT_DECORATOR_PATTERNS = {
     "policy", "consent", "requires_consent", "requires_policy",
     "privileged_check", "elevated_check",

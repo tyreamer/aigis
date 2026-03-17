@@ -16,7 +16,7 @@ def _scan(fixture_path):
 def test_console_output_contains_rule_ids(fixtures_dir):
     results = _scan(fixtures_dir / "unsafe_no_approval.py")
     text = format_console(results, str(fixtures_dir / "unsafe_no_approval.py"))
-    assert "AEG001" in text
+    assert "AIGIS001" in text
     assert "ERROR" in text
     assert "finding" in text.lower()
 
@@ -39,7 +39,7 @@ def test_console_shows_summary_by_rule(fixtures_dir):
     results = _scan(fixtures_dir / "unsafe_no_approval.py")
     text = format_console(results, str(fixtures_dir / "unsafe_no_approval.py"))
     assert "Summary by rule:" in text
-    assert "AEG001" in text
+    assert "AIGIS001" in text
 
 
 def test_console_shows_suppressed_count(fixtures_dir):
@@ -126,7 +126,7 @@ def test_html_output_is_valid(fixtures_dir):
     text = format_html(results, str(fixtures_dir / "unsafe_no_approval.py"))
     assert "<!DOCTYPE html>" in text
     assert "aigis" in text
-    assert "AEG001" in text
+    assert "AIGIS001" in text
     assert "const F=" in text or "const S=" in text  # JS data variables
 
 

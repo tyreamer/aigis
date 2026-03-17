@@ -20,7 +20,7 @@ Internal quality scorecard for each framework adapter. Updated after each evalua
 | Tool discovery | 100% | @tool decorator — reliable |
 | Approval/HITL detection | 100% | Decorator substring matching works |
 | Entrypoint detection | 100% | AgentExecutor, create_react_agent |
-| Precision on real repos | 100% | 14/14 AEG001 findings correct |
+| Precision on real repos | 100% | 14/14 AIGIS001 findings correct |
 | Human agreement | 100% | All findings verified in eval |
 
 ### LangGraph
@@ -29,7 +29,7 @@ Internal quality scorecard for each framework adapter. Updated after each evalua
 | Tool discovery | 95% | add_node works; misses wrapper-function graph vars |
 | Approval/HITL detection | 85% | interrupt_before works; interrupt() now supported |
 | Entrypoint detection | 90% | compile() heuristic good; misses graph vars from factory functions |
-| Precision on real repos | ~83% | Some test-code and subgraph noise on AEG003 |
+| Precision on real repos | ~83% | Some test-code and subgraph noise on AIGIS003 |
 | Human agreement | ~85% | Subgraph findings are arguable |
 
 ### MCP

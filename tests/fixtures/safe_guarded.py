@@ -4,7 +4,7 @@ from langchain.agents import AgentExecutor
 
 
 def requires_consent(fn):
-    """Consent/policy wrapper — satisfies both AEG001 and AEG002."""
+    """Consent/policy wrapper — satisfies both AIGIS001 and AIGIS002."""
     def wrapper(*args, **kwargs):
         resp = input(f"POLICY CHECK — consent to run {fn.__name__}? [y/n] ")
         if resp.lower() == "y":

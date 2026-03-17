@@ -304,9 +304,9 @@ const F=/*__FINDINGS_DATA__*/[];
 const S=/*__SUMMARY_DATA__*/{};
 
 const RM={
-AEG001:{name:'Unguarded Mutating Tool',desc:'Side-effecting tool reachable without approval gate',sev:'e'},
-AEG002:{name:'Privileged Without Consent',desc:'Privileged operation needs consent/policy wrapper',sev:'e'},
-AEG003:{name:'Missing Execution Budget',desc:'Agent entry point without iteration or budget limit',sev:'w'},
+AIGIS001:{name:'Unguarded Mutating Tool',desc:'Side-effecting tool reachable without approval gate',sev:'e'},
+AIGIS002:{name:'Privileged Without Consent',desc:'Privileged operation needs consent/policy wrapper',sev:'e'},
+AIGIS003:{name:'Missing Execution Budget',desc:'Agent entry point without iteration or budget limit',sev:'w'},
 };
 
 const I={
@@ -365,7 +365,7 @@ const rc=S.by_rule[rid];
 const total=(rc.error||0)+(rc.warning||0)+(rc.note||0);
 const meta=RM[rid]||{name:rid,desc:'',sev:'e'};
 const badgeCls=rc.error?'e':rc.warning?'w':'m';
-breakdownHtml+=`<div class="rule-card"><div class="badge ${badgeCls}">${rid.replace('AEG','')}</div><div class="ri"><div class="rid">${rid}</div><div class="rdesc">${esc(meta.name)}</div></div><div class="rcount">${total}</div></div>`;
+breakdownHtml+=`<div class="rule-card"><div class="badge ${badgeCls}">${rid.replace('AIGIS','')}</div><div class="ri"><div class="rid">${rid}</div><div class="rdesc">${esc(meta.name)}</div></div><div class="rcount">${total}</div></div>`;
 }
 breakdownHtml+='</div>';
 }

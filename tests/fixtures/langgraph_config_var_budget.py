@@ -1,7 +1,7 @@
 """Fixture: LangGraph — budget via config variable reference.
 
 compile() has no recursion_limit, but invoke() uses a config variable.
-AEG003 should NOT fire.
+AIGIS003 should NOT fire.
 """
 from langgraph.graph import StateGraph
 

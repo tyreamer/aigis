@@ -1,7 +1,7 @@
 """Fixture: AutoGen — GroupChat budget propagates to GroupChatManager.
 
 GroupChat has max_round=10. GroupChatManager wraps it.
-AEG003 should NOT fire on GroupChatManager.
+AIGIS003 should NOT fire on GroupChatManager.
 """
 from autogen import AssistantAgent, GroupChat, GroupChatManager
 

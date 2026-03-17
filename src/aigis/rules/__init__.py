@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from ..graph import ExecutionGraph
 from ..models import RuleResult
-from .aeg001_unguarded_mutating import check as check_aeg001
-from .aeg002_privileged_no_consent import check as check_aeg002
-from .aeg003_missing_budget import check as check_aeg003
+from .aigis001_unguarded_mutating import check as check_aigis001
+from .aigis002_privileged_no_consent import check as check_aigis002
+from .aigis003_missing_budget import check as check_aigis003
 
-ALL_RULES = [check_aeg001, check_aeg002, check_aeg003]
+ALL_RULES = [check_aigis001, check_aigis002, check_aigis003]
 
 
 def run_all_rules(graph: ExecutionGraph) -> list[RuleResult]:

@@ -5,12 +5,12 @@
 # Suppress specific findings
 suppressions:
   # Suppress by rule + path glob
-  - rule: AEG003
+  - rule: AIGIS003
     path: "examples/**"
     reason: "Example code — budget enforcement not required"
 
   # Suppress by symbol name
-  # - rule: AEG001
+  # - rule: AIGIS001
   #   symbol: my_internal_tool
   #   reason: "Has runtime approval via CLI prompt"
 

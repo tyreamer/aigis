@@ -2,14 +2,14 @@
 from langchain.tools import tool
 
 
-@tool  # aigis: disable=AEG001 -- reviewed and accepted risk
+@tool  # aigis: disable=AIGIS001 -- reviewed and accepted risk
 def suppressed_delete(path: str):
     """This tool has a side effect but is suppressed inline."""
     import os
     os.remove(path)
 
 
-@tool  # noqa: AEG001
+@tool  # noqa: AIGIS001
 def noqa_style_suppressed(path: str):
     """Suppressed using noqa-style comment."""
     import shutil

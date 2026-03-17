@@ -1,4 +1,4 @@
-"""AEG001: Mutating tool reachable without approval gate.
+"""AIGIS001: Mutating tool reachable without approval gate.
 
 Fires when a tool that performs side-effecting operations (file I/O,
 HTTP mutations, subprocess, etc.) has no approval gate wrapping it.
@@ -9,7 +9,7 @@ from __future__ import annotations
 from ..graph import ExecutionGraph
 from ..models import EdgeKind, Evidence, Finding, NodeKind, RuleResult, Severity, TriState
 
-RULE_ID = "AEG001"
+RULE_ID = "AIGIS001"
 
 
 def check(graph: ExecutionGraph) -> RuleResult:
