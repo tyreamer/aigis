@@ -44,7 +44,7 @@ def test_scan_nonexistent_path():
 def test_version_command():
     result = runner.invoke(app, ["version"])
     assert "aigis" in result.output
-    assert "0.2.0" in result.output
+    assert "0.3.0" in result.output
 
 
 def test_scan_directory(fixtures_dir):
