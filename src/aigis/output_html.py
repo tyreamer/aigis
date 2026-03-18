@@ -318,6 +318,12 @@ AIGIS015:{name:'Dynamic Tool List',desc:'Agent tools loaded at runtime — capab
 AIGIS017:{name:'LLM in Unbounded Loop',desc:'LLM call inside a loop with no iteration limit',sev:'w'},
 AIGIS020:{name:'Secrets in Tool Args',desc:'Credentials passed as tool function arguments',sev:'e'},
 AIGIS021:{name:'PII Sent to LLM',desc:'Personal data sent to an LLM without redaction',sev:'w'},
+AIGIS007:{name:'Unsanitized Tool Output',desc:'Tool output injected into prompt without cleaning',sev:'w'},
+AIGIS010:{name:'LLM Output Injection',desc:'LLM response passed to eval, exec, or shell',sev:'e'},
+AIGIS016:{name:'Read-Write Same Resource',desc:'Agent can read and write the same resource type',sev:'w'},
+AIGIS018:{name:'No Rate Limit on Generation',desc:'Expensive generation API without rate limit',sev:'w'},
+AIGIS019:{name:'Unbounded Embedding Input',desc:'Embedding called without input length check',sev:'w'},
+AIGIS022:{name:'Full Records to Agent',desc:'Raw database records returned without field filtering',sev:'w'},
 };
 
 const I={

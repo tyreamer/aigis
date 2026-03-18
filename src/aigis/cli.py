@@ -14,6 +14,7 @@ from .models import Severity, SEVERITY_RANK
 from .output import format_console, format_json, format_sarif
 from .output_html import format_html
 from .rules import run_all_rules
+from .policy import evaluate_all_policies, format_policy_console
 from .surface import analyze_surface, format_surface_console
 from .suppression import SuppressionFilter
 
@@ -101,10 +102,12 @@ def scan(
     formatter = _FORMATTERS[fmt]
     text = formatter(filtered_results, str(target), len(suppressed), baselined_count)
 
-    # Attack surface summary (console only, appended to output)
+    # Attack surface + policy summary (console only)
     if fmt == OutputFormat.console:
         surface = analyze_surface(graph, filtered_results)
         text += format_surface_console(surface)
+        policy = evaluate_all_policies(filtered_results)
+        text += format_policy_console(policy)
 
     if output:
         output.write_text(text, encoding="utf-8")

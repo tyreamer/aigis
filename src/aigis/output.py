@@ -183,6 +183,30 @@ RULE_METADATA = {
         "name": "PIIToLLM",
         "shortDescription": "Personal data sent to LLM without redaction",
     },
+    "AIGIS007": {
+        "name": "UnsanitizedToolOutput",
+        "shortDescription": "Tool output injected into prompt without sanitization",
+    },
+    "AIGIS010": {
+        "name": "AgentOutputInjection",
+        "shortDescription": "LLM output passed to eval, exec, or shell",
+    },
+    "AIGIS016": {
+        "name": "ReadWriteSameResource",
+        "shortDescription": "Agent has read and write access to same resource type",
+    },
+    "AIGIS018": {
+        "name": "GenerationNoRateLimit",
+        "shortDescription": "Expensive generation API called without rate limit",
+    },
+    "AIGIS019": {
+        "name": "UnboundedEmbedding",
+        "shortDescription": "Embedding called on unbounded input",
+    },
+    "AIGIS022": {
+        "name": "FullRecordsToAgent",
+        "shortDescription": "Raw database records returned without field filtering",
+    },
 }
 
 _SEV_TO_SARIF = {
