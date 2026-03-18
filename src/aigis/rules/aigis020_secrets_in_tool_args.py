@@ -14,6 +14,13 @@ from ..models import Evidence, Finding, Location, NodeKind, RuleResult, Severity
 
 RULE_ID = "AIGIS020"
 
+# Only flag secrets in outbound/network calls, not SDK constructors
+_OUTBOUND_CALLS = {
+    "post", "put", "patch", "delete", "get", "request",
+    "send", "fetch", "urlopen", "execute", "connect",
+    "log", "print", "write", "dump", "emit",
+}
+
 _SECRET_PATTERNS = {
     "api_key", "apikey", "secret", "secret_key", "token", "auth_token",
     "access_token", "access_key", "password", "passwd", "credential",
@@ -84,12 +91,26 @@ def _check_function(file_path: str, func_name: str, func_line: int) -> list[tupl
             if not call_name:
                 continue
 
-            # Check all args and kwargs for secret-named variables
+            # Skip SDK constructors — passing api_key to ChatOpenAI() is expected
+            if call_name[0:1].isupper():
+                continue
+
+            # Skip calls where the secret is passed to a kwarg with a matching
+            # name (api_key=api_key) — this is the standard SDK pattern
+            # Only flag when a secret goes to an outbound/sink call
+            if call_name not in _OUTBOUND_CALLS:
+                continue
+
+            # Check args and kwargs for secret-named variables
             for arg in child.args:
                 if isinstance(arg, ast.Name) and _is_secret_name(arg.id):
                     issues.append((arg.id, call_name, child.lineno))
 
             for kw in child.keywords:
+                # Skip kwarg where the name itself is a secret pattern
+                # (e.g. api_key=my_key — this is SDK config, not a leak)
+                if kw.arg and _is_secret_name(kw.arg):
+                    continue
                 if isinstance(kw.value, ast.Name) and _is_secret_name(kw.value.id):
                     issues.append((kw.value.id, call_name, child.lineno))
 
