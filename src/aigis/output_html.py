@@ -310,6 +310,14 @@ AIGIS003:{name:'Agent Can Run Forever',desc:'This agent has no limit on how long
 AIGIS004:{name:'Retry Without Limit',desc:'This tool retries or loops with no maximum',sev:'w'},
 AIGIS005:{name:'Uncapped Budget Input',desc:'An execution limit is set from a variable with no cap',sev:'w'},
 AIGIS006:{name:'Raw History as Query',desc:'Raw chat history is passed directly to search',sev:'w'},
+AIGIS008:{name:'Mutable System Prompt',desc:'System prompt loaded from file, env var, or database',sev:'w'},
+AIGIS009:{name:'Input Injection Risk',desc:'Agent input flows directly into a dangerous operation',sev:'e'},
+AIGIS011:{name:'Unscoped Retrieval',desc:'Search query with no tenant or scope filter',sev:'w'},
+AIGIS012:{name:'Unvalidated API Response',desc:'External API response returned without checking',sev:'w'},
+AIGIS015:{name:'Dynamic Tool List',desc:'Agent tools loaded at runtime — capabilities unpredictable',sev:'w'},
+AIGIS017:{name:'LLM in Unbounded Loop',desc:'LLM call inside a loop with no iteration limit',sev:'w'},
+AIGIS020:{name:'Secrets in Tool Args',desc:'Credentials passed as tool function arguments',sev:'e'},
+AIGIS021:{name:'PII Sent to LLM',desc:'Personal data sent to an LLM without redaction',sev:'w'},
 };
 
 const I={

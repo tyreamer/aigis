@@ -10,6 +10,14 @@ from .aigis003_missing_budget import check as check_aigis003
 from .aigis004_unbounded_retry import check as check_aigis004
 from .aigis005_user_controlled_budget import check as check_aigis005
 from .aigis006_raw_history_retrieval import check as check_aigis006
+from .aigis008_mutable_system_prompt import check as check_aigis008
+from .aigis009_user_input_to_sink import check as check_aigis009
+from .aigis011_unscoped_retrieval import check as check_aigis011
+from .aigis012_unvalidated_tool_response import check as check_aigis012
+from .aigis015_dynamic_tool_list import check as check_aigis015
+from .aigis017_llm_in_loop import check as check_aigis017
+from .aigis020_secrets_in_tool_args import check as check_aigis020
+from .aigis021_pii_in_llm_calls import check as check_aigis021
 
 ALL_RULES = [
     check_aigis001,
@@ -18,6 +26,14 @@ ALL_RULES = [
     check_aigis004,
     check_aigis005,
     check_aigis006,
+    check_aigis008,
+    check_aigis009,
+    check_aigis011,
+    check_aigis012,
+    check_aigis015,
+    check_aigis017,
+    check_aigis020,
+    check_aigis021,
 ]
 
 

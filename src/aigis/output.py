@@ -151,6 +151,38 @@ RULE_METADATA = {
         "name": "RawHistoryAsQuery",
         "shortDescription": "Raw chat history passed directly to search/retrieval",
     },
+    "AIGIS008": {
+        "name": "MutableSystemPrompt",
+        "shortDescription": "System prompt loaded from file, env var, or database",
+    },
+    "AIGIS009": {
+        "name": "InputInjection",
+        "shortDescription": "Agent input flows directly into dangerous operation",
+    },
+    "AIGIS011": {
+        "name": "UnscopedRetrieval",
+        "shortDescription": "Retrieval query with no tenant or scope filter",
+    },
+    "AIGIS012": {
+        "name": "UnvalidatedResponse",
+        "shortDescription": "External API response used without validation",
+    },
+    "AIGIS015": {
+        "name": "DynamicToolList",
+        "shortDescription": "Agent tools loaded dynamically at runtime",
+    },
+    "AIGIS017": {
+        "name": "LLMInUnboundedLoop",
+        "shortDescription": "LLM call inside loop with no iteration limit",
+    },
+    "AIGIS020": {
+        "name": "SecretsInToolArgs",
+        "shortDescription": "Credentials passed as tool arguments",
+    },
+    "AIGIS021": {
+        "name": "PIIToLLM",
+        "shortDescription": "Personal data sent to LLM without redaction",
+    },
 }
 
 _SEV_TO_SARIF = {

@@ -412,6 +412,103 @@ def test_ag2_initiate_group_chat_without_budget_fires(fixtures_dir):
     assert len(results["AIGIS003"].findings) >= 1
 
 
+# -- AIGIS008: mutable system prompt ----------------------------------------
+
+def test_aigis008_fires_on_file_prompt(fixtures_dir):
+    results = _run(fixtures_dir / "mutable_prompt.py")
+    assert len(results["AIGIS008"].findings) >= 1
+
+
+def test_aigis008_silent_on_literal_prompt(fixtures_dir):
+    results = _run(fixtures_dir / "literal_prompt.py")
+    assert len(results["AIGIS008"].findings) == 0
+
+
+# -- AIGIS009: user input to dangerous sink ----------------------------------
+
+def test_aigis009_fires_on_unsanitized_input(fixtures_dir):
+    results = _run(fixtures_dir / "user_input_injection.py")
+    assert len(results["AIGIS009"].findings) >= 1
+    assert results["AIGIS009"].findings[0].evidence.subject_name == "run_command"
+
+
+def test_aigis009_silent_on_validated_input(fixtures_dir):
+    results = _run(fixtures_dir / "user_input_validated.py")
+    assert len(results["AIGIS009"].findings) == 0
+
+
+# -- AIGIS011: unscoped retrieval --------------------------------------------
+
+def test_aigis011_fires_on_unscoped(fixtures_dir):
+    results = _run(fixtures_dir / "unscoped_retrieval.py")
+    assert len(results["AIGIS011"].findings) >= 1
+
+
+def test_aigis011_silent_on_scoped(fixtures_dir):
+    results = _run(fixtures_dir / "scoped_retrieval.py")
+    assert len(results["AIGIS011"].findings) == 0
+
+
+# -- AIGIS012: unvalidated API response --------------------------------------
+
+def test_aigis012_fires_on_unvalidated(fixtures_dir):
+    results = _run(fixtures_dir / "unvalidated_response.py")
+    assert len(results["AIGIS012"].findings) >= 1
+
+
+def test_aigis012_silent_on_validated(fixtures_dir):
+    results = _run(fixtures_dir / "validated_response.py")
+    assert len(results["AIGIS012"].findings) == 0
+
+
+# -- AIGIS015: dynamic tool list ---------------------------------------------
+
+def test_aigis015_fires_on_dynamic_tools(fixtures_dir):
+    results = _run(fixtures_dir / "dynamic_tools.py")
+    assert len(results["AIGIS015"].findings) >= 1
+
+
+def test_aigis015_silent_on_static_tools(fixtures_dir):
+    results = _run(fixtures_dir / "static_tools.py")
+    assert len(results["AIGIS015"].findings) == 0
+
+
+# -- AIGIS017: LLM in unbounded loop ----------------------------------------
+
+def test_aigis017_fires_on_llm_in_loop(fixtures_dir):
+    results = _run(fixtures_dir / "llm_in_loop.py")
+    assert len(results["AIGIS017"].findings) >= 1
+
+
+def test_aigis017_silent_on_bounded_loop(fixtures_dir):
+    results = _run(fixtures_dir / "llm_in_loop_safe.py")
+    assert len(results["AIGIS017"].findings) == 0
+
+
+# -- AIGIS020: secrets in tool args ------------------------------------------
+
+def test_aigis020_fires_on_secrets(fixtures_dir):
+    results = _run(fixtures_dir / "secrets_in_args.py")
+    assert len(results["AIGIS020"].findings) >= 1
+
+
+def test_aigis020_silent_on_safe_auth(fixtures_dir):
+    results = _run(fixtures_dir / "secrets_safe.py")
+    assert len(results["AIGIS020"].findings) == 0
+
+
+# -- AIGIS021: PII in LLM calls ---------------------------------------------
+
+def test_aigis021_fires_on_pii(fixtures_dir):
+    results = _run(fixtures_dir / "pii_in_llm.py")
+    assert len(results["AIGIS021"].findings) >= 1
+
+
+def test_aigis021_silent_on_redacted(fixtures_dir):
+    results = _run(fixtures_dir / "pii_redacted.py")
+    assert len(results["AIGIS021"].findings) == 0
+
+
 # -- AIGIS004: unbounded retry / loop ----------------------------------------
 
 def test_aigis004_fires_on_bare_retry(fixtures_dir):
