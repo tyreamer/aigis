@@ -1,8 +1,8 @@
-"""AIGIS002: Privileged tool lacks explicit consent/policy wrapper.
+"""AIGIS002: System-Level Tool Without Consent Policy
 
-Fires when a tool performs privileged operations (subprocess, OS commands)
-without an explicit consent or policy wrapper.  A generic approval gate
-does NOT satisfy this rule — it requires a consent/policy-specific pattern.
+Fires when a tool runs system commands (subprocess, os.system) without
+an explicit consent or policy wrapper. A basic approval decorator is
+not enough — system-level operations need a stricter consent check.
 """
 
 from __future__ import annotations
@@ -27,20 +27,34 @@ def check(graph: ExecutionGraph) -> RuleResult:
         if not privileged:
             continue
 
-        # Check for consent/policy wrapper specifically
         if _has_consent_wrapper(graph, tool.id):
             continue
 
-        priv_names = [s.name for s in privileged]
         priv_descs = [s.metadata.get("description", s.name) for s in privileged]
-
-        # Check if there is a generic approval (not consent-level)
         approval_signal = _find_approval_signal(graph, tool.id)
+
+        if approval_signal:
+            rationale = (
+                f"'{tool.name}' can execute system-level operations "
+                f"({', '.join(priv_descs)}). It has a basic approval check, "
+                f"but system commands need a stronger consent policy — "
+                f"a generic @requires_approval is not sufficient for operations "
+                f"that can affect the host system."
+            )
+        else:
+            rationale = (
+                f"'{tool.name}' can execute system-level operations "
+                f"({', '.join(priv_descs)}) with no consent check at all. "
+                f"The agent can run arbitrary commands on the host system "
+                f"without any policy gate."
+            )
 
         findings.append(
             Finding(
                 rule_id=RULE_ID,
-                message=f"Tool '{tool.name}' performs privileged operation(s) [{', '.join(priv_names)}] without a consent/policy wrapper",
+                message=(
+                    f"'{tool.name}' runs system commands without a consent policy"
+                ),
                 location=tool.location,
                 severity=Severity.ERROR,
                 node_id=tool.id,
@@ -50,11 +64,13 @@ def check(graph: ExecutionGraph) -> RuleResult:
                     approval_signal_found=TriState.YES if approval_signal else TriState.NO,
                     approval_signal_kind=approval_signal or "",
                     confidence="high",
-                    rationale=f"Tool '{tool.name}' performs privileged operation(s) ({', '.join(priv_descs)}) that could affect system integrity. "
-                              + ("A generic approval gate was found but it does not meet the consent/policy standard required for privileged operations."
-                                 if approval_signal else
-                                 "No approval gate of any kind was detected."),
-                    remediation="Add an explicit consent/policy decorator (e.g. @requires_consent, @policy_check). Generic @requires_approval is insufficient for privileged operations.",
+                    rationale=rationale,
+                    remediation=(
+                        "Wrap this tool with an explicit consent policy — for example "
+                        "@requires_consent or @policy_check. A basic @requires_approval "
+                        "is not enough for system-level operations. The consent wrapper "
+                        "should enforce who can authorize execution and under what conditions."
+                    ),
                 ),
             )
         )
@@ -72,7 +88,6 @@ def _has_consent_wrapper(graph: ExecutionGraph, node_id: str) -> bool:
 
 
 def _find_approval_signal(graph: ExecutionGraph, node_id: str) -> str | None:
-    """Return the source description of any approval gate (even non-consent)."""
     wraps = graph.edges_to(node_id, EdgeKind.WRAPS)
     for edge in wraps:
         node = graph.nodes[edge.source]

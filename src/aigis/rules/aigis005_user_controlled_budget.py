@@ -42,8 +42,7 @@ def check(graph: ExecutionGraph) -> RuleResult:
                 Finding(
                     rule_id=RULE_ID,
                     message=(
-                        f"Budget parameter '{param_name}' receives a variable value "
-                        f"with no visible server-side cap"
+                        f"'{param_name}' is set from a variable with no maximum cap"
                     ),
                     location=node.location,
                     severity=Severity.WARNING,
@@ -52,15 +51,16 @@ def check(graph: ExecutionGraph) -> RuleResult:
                         subject_name=param_name,
                         confidence="medium",
                         rationale=(
-                            f"The execution budget '{param_name}' at line {line} is set "
-                            f"from a variable rather than a constant. If this variable "
-                            f"comes from user input, the caller can set arbitrarily high "
-                            f"values, leading to unbounded cost or execution time."
+                            f"The limit '{param_name}' is set from a variable rather "
+                            f"than a fixed number. If that variable comes from user "
+                            f"input or an API request, a caller could set it to an "
+                            f"extremely high value — causing runaway cost, long "
+                            f"execution times, or resource exhaustion."
                         ),
                         remediation=(
-                            f"Add a server-side cap: "
-                            f"`{param_name} = min({param_name}, MAX_{param_name.upper()})` "
-                            f"or use a hardcoded constant."
+                            f"Add a server-side cap so the value can't exceed a safe "
+                            f"maximum. For example: "
+                            f"{param_name} = min({param_name}, MAX_{param_name.upper()})"
                         ),
                     ),
                 )

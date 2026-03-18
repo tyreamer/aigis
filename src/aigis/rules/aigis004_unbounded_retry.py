@@ -119,17 +119,29 @@ def _has_break(node: ast.While) -> bool:
 
 
 def _make_finding(tool, issue_type: str, line: int) -> Finding:
-    messages = {
-        "uncapped_retry_decorator": (
-            f"Tool '{tool.name}' has a @retry decorator without a max attempts limit",
-            "Add a retry cap: @retry(max_retries=N) or @retry(stop=stop_after_attempt(N)).",
-        ),
-        "while_true_no_break": (
-            f"Tool '{tool.name}' contains a while-True loop without a break or return",
-            "Add a break condition, iteration counter, or timeout to prevent infinite loops.",
-        ),
-    }
-    msg, fix = messages.get(issue_type, (f"Tool '{tool.name}' has an unbounded loop", "Add a loop bound."))
+    if issue_type == "uncapped_retry_decorator":
+        msg = f"'{tool.name}' retries on failure with no maximum attempt limit"
+        rationale = (
+            f"This tool uses a @retry decorator but doesn't set a maximum "
+            f"number of attempts. If the operation keeps failing (network "
+            f"timeout, bad input, service down), the tool will retry forever."
+        )
+        fix = (
+            "Set a retry limit — for example: "
+            "@retry(max_retries=3) or @retry(stop=stop_after_attempt(5))."
+        )
+    else:
+        msg = f"'{tool.name}' has a loop that may never stop"
+        rationale = (
+            f"This tool contains a while-True loop with no visible break "
+            f"condition or return statement. If the expected exit condition "
+            f"never occurs, the tool will run forever."
+        )
+        fix = (
+            "Add a break condition, a maximum iteration counter, "
+            "or a timeout to ensure the loop always terminates."
+        )
+
     return Finding(
         rule_id=RULE_ID,
         message=msg,
@@ -139,11 +151,7 @@ def _make_finding(tool, issue_type: str, line: int) -> Finding:
         evidence=Evidence(
             subject_name=tool.name,
             confidence="high",
-            rationale=(
-                f"Tool '{tool.name}' contains a retry or loop pattern that could "
-                f"run indefinitely. Without a hard cap, a transient failure or "
-                f"unexpected condition could cause the tool to loop forever."
-            ),
+            rationale=rationale,
             remediation=fix,
         ),
     )

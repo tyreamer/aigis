@@ -1,9 +1,7 @@
-"""AIGIS003: Missing max-iterations / execution budget.
+"""AIGIS003: Agent Can Run Forever
 
-Fires when an agent entry point (AgentExecutor, Agent, Crew, graph.compile, etc.)
-is not linked to any execution budget — either at construction time (e.g.
-max_iterations=N on the constructor) or at execution time (e.g.
-Runner.run(agent, max_turns=N)).
+Fires when an agent has no limit on how many steps, turns, or iterations
+it can take — meaning it could loop indefinitely.
 """
 
 from __future__ import annotations
@@ -13,18 +11,17 @@ from ..models import EdgeKind, Evidence, Finding, NodeKind, RuleResult, Severity
 
 RULE_ID = "AIGIS003"
 
-# Map entry point names to framework descriptions for evidence
-_FRAMEWORK_HINTS: dict[str, tuple[str, str]] = {
-    # name -> (framework, recommended fix)
-    "Agent": ("OpenAI Agents SDK", "max_turns=N on Agent() or Runner.run(..., max_turns=N)"),
-    "AgentExecutor": ("LangChain", "max_iterations=N on AgentExecutor()"),
-    "create_react_agent": ("LangChain", "max_iterations=N"),
-    "compile": ("LangGraph", "recursion_limit=N on compile() or in invoke(config={})"),
-    "Crew": ("CrewAI", "max_iter=N on Crew()"),
-    "AssistantAgent": ("AutoGen/AG2", "max_consecutive_auto_reply=N or max_turns=N on initiate_chat()"),
-    "ConversableAgent": ("AutoGen/AG2", "max_consecutive_auto_reply=N or max_turns=N on initiate_chat()"),
-    "GroupChat": ("AutoGen/AG2", "max_round=N on GroupChat()"),
-    "GroupChatManager": ("AutoGen/AG2", "max_round=N on GroupChat() or max_turns=N on execution call"),
+# Map entry point names to framework-specific advice
+_HINTS: dict[str, tuple[str, str]] = {
+    "Agent": ("OpenAI Agents SDK", "Set max_turns on Agent() or Runner.run(..., max_turns=N)"),
+    "AgentExecutor": ("LangChain", "Set max_iterations=N on AgentExecutor()"),
+    "create_react_agent": ("LangChain", "Set max_iterations=N"),
+    "compile": ("LangGraph", "Set recursion_limit=N on compile() or pass it in invoke(config={})"),
+    "Crew": ("CrewAI", "Set max_iter=N on Crew()"),
+    "AssistantAgent": ("AutoGen/AG2", "Set max_consecutive_auto_reply=N or pass max_turns=N to initiate_chat()"),
+    "ConversableAgent": ("AutoGen/AG2", "Set max_consecutive_auto_reply=N or pass max_turns=N to initiate_chat()"),
+    "GroupChat": ("AutoGen/AG2", "Set max_round=N on GroupChat()"),
+    "GroupChatManager": ("AutoGen/AG2", "Set max_round=N on GroupChat() or max_turns=N on the execution call"),
 }
 
 
@@ -34,25 +31,22 @@ def check(graph: ExecutionGraph) -> RuleResult:
 
     for ep in entry_points:
         wraps = graph.edges_to(ep.id, EdgeKind.WRAPS)
-        budget_nodes = [
-            graph.nodes[e.source]
-            for e in wraps
-            if graph.nodes[e.source].kind == NodeKind.BUDGET_CONTROL
-        ]
+        has_budget = any(
+            graph.nodes[e.source].kind == NodeKind.BUDGET_CONTROL for e in wraps
+        )
 
-        if budget_nodes:
+        if has_budget:
             continue
 
-        framework, fix_hint = _FRAMEWORK_HINTS.get(
-            ep.name, ("unknown", "max_iterations=N, max_turns=N, or recursion_limit=N")
+        framework, fix = _HINTS.get(
+            ep.name, ("this framework", "Set a max_iterations, max_turns, or recursion_limit")
         )
 
         findings.append(
             Finding(
                 rule_id=RULE_ID,
                 message=(
-                    f"Entry point '{ep.name}' has no execution budget "
-                    f"(max_iterations, recursion_limit, max_turns, timeout)"
+                    f"This agent ({ep.name}) has no limit on how long it can run"
                 ),
                 location=ep.location,
                 severity=Severity.WARNING,
@@ -62,13 +56,13 @@ def check(graph: ExecutionGraph) -> RuleResult:
                     budget_signal_found=TriState.NO,
                     confidence="high",
                     rationale=(
-                        f"[{framework}] Entry point '{ep.name}' creates an agent "
-                        f"execution loop with no budget limit. Checked constructor "
-                        f"kwargs and same-file execution calls — no budget control "
-                        f"found on either. Without bounds, the agent could run "
-                        f"indefinitely."
+                        f"This {framework} agent has no maximum iteration or turn "
+                        f"limit — not on the constructor and not on any execution "
+                        f"call in this file. Without a limit, the agent could loop "
+                        f"indefinitely, consuming resources and potentially taking "
+                        f"repeated actions with no stop condition."
                     ),
-                    remediation=f"Add an execution budget: {fix_hint}.",
+                    remediation=f"{fix}.",
                 ),
             )
         )

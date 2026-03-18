@@ -1,91 +1,4 @@
-"""HTML output formatter — premium single-file security report."""
-
-from __future__ import annotations
-
-import json
-from datetime import datetime, timezone
-from pathlib import Path
-
-from . import __version__
-from .models import Finding, RuleResult, Severity
-
-
-def format_html(
-    results: list[RuleResult],
-    target: str,
-    suppressed_count: int = 0,
-    baselined_count: int = 0,
-) -> str:
-    all_findings = _collect_findings(results)
-
-    findings_json = json.dumps([_finding_to_dict(f, target) for f in all_findings])
-    summary = {
-        "version": __version__,
-        "target": target,
-        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
-        "total": len(all_findings),
-        "errors": sum(1 for f in all_findings if f.severity == Severity.ERROR),
-        "warnings": sum(1 for f in all_findings if f.severity == Severity.WARNING),
-        "notes": sum(1 for f in all_findings if f.severity == Severity.NOTE),
-        "suppressed": suppressed_count,
-        "baselined": baselined_count,
-        "by_rule": _count_by_rule(all_findings),
-        "by_file": _count_by_file(all_findings, target),
-    }
-    summary_json = json.dumps(summary)
-
-    return _TEMPLATE.replace("/*__FINDINGS_DATA__*/[]", findings_json).replace(
-        "/*__SUMMARY_DATA__*/{}", summary_json
-    )
-
-
-def _finding_to_dict(f: Finding, target: str) -> dict:
-    try:
-        rel_path = str(Path(f.location.file).relative_to(Path(target).resolve()))
-    except ValueError:
-        rel_path = f.location.file
-    rel_path = rel_path.replace("\\", "/")
-    d: dict = {
-        "rule_id": f.rule_id,
-        "severity": f.severity.value,
-        "message": f.message,
-        "file": rel_path,
-        "line": f.location.line,
-        "col": f.location.col,
-    }
-    if f.evidence:
-        d["evidence"] = f.evidence.to_dict()
-    return d
-
-
-def _count_by_rule(findings: list[Finding]) -> dict:
-    counts: dict[str, dict[str, int]] = {}
-    for f in findings:
-        rc = counts.setdefault(f.rule_id, {"error": 0, "warning": 0, "note": 0})
-        rc[f.severity.value] += 1
-    return counts
-
-
-def _count_by_file(findings: list[Finding], target: str) -> dict:
-    counts: dict[str, int] = {}
-    for f in findings:
-        try:
-            rel = str(Path(f.location.file).relative_to(Path(target).resolve()))
-        except ValueError:
-            rel = f.location.file
-        rel = rel.replace("\\", "/")
-        counts[rel] = counts.get(rel, 0) + 1
-    return counts
-
-
-def _collect_findings(results: list[RuleResult]) -> list[Finding]:
-    findings: list[Finding] = []
-    for r in results:
-        findings.extend(r.findings)
-    return sorted(findings, key=lambda f: (f.location.file, f.location.line))
-
-
-_TEMPLATE = r"""<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -300,16 +213,16 @@ html{font-size:14px}
 </div>
 
 <script>
-const F=/*__FINDINGS_DATA__*/[];
-const S=/*__SUMMARY_DATA__*/{};
+const F=[];
+const S={"version": "0.2.0", "target": "D:\\Projects\\aigis-eval\\repos_v2\\superpowers", "timestamp": "2026-03-18 13:17:30 UTC", "total": 0, "errors": 0, "warnings": 0, "notes": 0, "suppressed": 0, "baselined": 0, "by_rule": {}, "by_file": {}};
 
 const RM={
-AIGIS001:{name:'Dangerous Tool, No Approval',desc:'This tool can take destructive actions without human approval',sev:'e'},
-AIGIS002:{name:'System Command, No Consent',desc:'This tool runs system commands without a consent policy',sev:'e'},
-AIGIS003:{name:'Agent Can Run Forever',desc:'This agent has no limit on how long it can run',sev:'w'},
-AIGIS004:{name:'Retry Without Limit',desc:'This tool retries or loops with no maximum',sev:'w'},
-AIGIS005:{name:'Uncapped Budget Input',desc:'An execution limit is set from a variable with no cap',sev:'w'},
-AIGIS006:{name:'Raw History as Query',desc:'Raw chat history is passed directly to search',sev:'w'},
+AIGIS001:{name:'Unguarded Mutating Tool',desc:'Side-effecting tool reachable without approval gate',sev:'e'},
+AIGIS002:{name:'Privileged Without Consent',desc:'Privileged operation needs consent/policy wrapper',sev:'e'},
+AIGIS003:{name:'Missing Execution Budget',desc:'Agent entry point without iteration or budget limit',sev:'w'},
+AIGIS004:{name:'Unbounded Retry/Loop',desc:'Retry or loop pattern without hard cap',sev:'w'},
+AIGIS005:{name:'User-Controlled Budget',desc:'Execution budget from variable with no server-side cap',sev:'w'},
+AIGIS006:{name:'Raw History Retrieval',desc:'Raw chat history passed directly to retrieval',sev:'w'},
 };
 
 const I={
@@ -492,4 +405,4 @@ function esc(s){if(!s)return'';const d=document.createElement('div');d.textConte
 document.addEventListener('DOMContentLoaded',init);
 </script>
 </body>
-</html>"""
+</html>

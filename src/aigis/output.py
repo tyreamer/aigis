@@ -128,28 +128,28 @@ SARIF_SCHEMA = "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sari
 
 RULE_METADATA = {
     "AIGIS001": {
-        "name": "UnguardedMutatingSink",
-        "shortDescription": "Mutating tool reachable without approval gate",
+        "name": "DangerousToolNoApproval",
+        "shortDescription": "Dangerous tool with no human approval step",
     },
     "AIGIS002": {
-        "name": "PrivilegedNoConsent",
-        "shortDescription": "Privileged tool lacks explicit consent/policy wrapper",
+        "name": "SystemCommandNoConsent",
+        "shortDescription": "System-level tool without consent policy",
     },
     "AIGIS003": {
-        "name": "MissingExecutionBudget",
-        "shortDescription": "Missing max-iterations / execution budget",
+        "name": "AgentCanRunForever",
+        "shortDescription": "Agent has no limit on how long it can run",
     },
     "AIGIS004": {
-        "name": "UnboundedRetryLoop",
-        "shortDescription": "Retry or loop pattern without hard cap",
+        "name": "RetryWithoutLimit",
+        "shortDescription": "Retry or loop with no maximum attempts",
     },
     "AIGIS005": {
-        "name": "UserControlledBudget",
-        "shortDescription": "User-controlled execution budget without server-side cap",
+        "name": "UncappedBudgetInput",
+        "shortDescription": "Execution limit set from variable with no cap",
     },
     "AIGIS006": {
-        "name": "RawHistoryRetrieval",
-        "shortDescription": "Raw chat history used directly as retrieval query",
+        "name": "RawHistoryAsQuery",
+        "shortDescription": "Raw chat history passed directly to search/retrieval",
     },
 }
 
