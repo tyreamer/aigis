@@ -22,27 +22,35 @@ _HISTORY_NAMES = {
     "dialog", "dialogue", "transcript", "turns",
 }
 
-# Function/method names that indicate retrieval operations
+# Method names that are unambiguously retrieval operations.
+# invoke/ainvoke are intentionally excluded — they are generic LangChain
+# methods used by chat models, chains, and tools, not just retrievers.
 _RETRIEVAL_METHODS = {
-    "retrieve", "search", "query", "similarity_search",
-    "similarity_search_with_score", "as_retriever", "get_relevant_documents",
-    "invoke", "ainvoke", "retrieve_documents", "vector_search",
-    "semantic_search", "retriever", "rag_query",
+    "retrieve", "similarity_search", "similarity_search_with_score",
+    "get_relevant_documents", "retrieve_documents", "vector_search",
+    "semantic_search", "rag_query", "max_marginal_relevance_search",
+}
+
+# For invoke/ainvoke, only flag if the receiver variable name suggests
+# a retriever, not a chat model or generic chain.
+_RETRIEVER_RECEIVER_PATTERNS = {
+    "retriever", "vectorstore", "vector_store", "index",
+    "search_engine", "doc_store", "docstore",
 }
 
 # Kwarg names that indicate a query input
-_QUERY_KWARGS = {"query", "input", "question", "search_query", "text", "prompt"}
+_QUERY_KWARGS = {"query", "input", "question", "search_query", "text"}
 
 
 def check(graph: ExecutionGraph) -> RuleResult:
     findings: list[Finding] = []
-    tools = graph.nodes_by_kind(NodeKind.TOOL_DEF)
-    # Also check all functions in files with tools (for orchestration code)
     checked_files: set[str] = set()
 
-    for tool in tools:
+    for tool in graph.nodes_by_kind(NodeKind.TOOL_DEF):
         checked_files.add(tool.location.file)
-        issues = _check_file(tool.location.file)
+
+    for file_path in checked_files:
+        issues = _check_file(file_path)
         for loc, func_name, var_name, method_name in issues:
             findings.append(
                 Finding(
@@ -91,7 +99,21 @@ def _check_file(file_path: str) -> list[tuple[Location, str, str, str]]:
             continue
 
         method_name = _call_method_name(node)
-        if not method_name or method_name.lower() not in _RETRIEVAL_METHODS:
+        if not method_name:
+            continue
+
+        method_lower = method_name.lower()
+
+        # Check if this is an unambiguous retrieval method
+        is_retrieval = method_lower in _RETRIEVAL_METHODS
+
+        # For invoke/ainvoke, only match if receiver looks like a retriever
+        if not is_retrieval and method_lower in {"invoke", "ainvoke"}:
+            receiver = _call_receiver_name(node)
+            if receiver and any(p in receiver.lower() for p in _RETRIEVER_RECEIVER_PATTERNS):
+                is_retrieval = True
+
+        if not is_retrieval:
             continue
 
         # Check positional args for history variable names
@@ -117,6 +139,14 @@ def _call_method_name(call: ast.Call) -> str:
         return call.func.id
     if isinstance(call.func, ast.Attribute):
         return call.func.attr
+    return ""
+
+
+def _call_receiver_name(call: ast.Call) -> str:
+    """Get the variable name of the receiver in obj.method() calls."""
+    if isinstance(call.func, ast.Attribute):
+        if isinstance(call.func.value, ast.Name):
+            return call.func.value.id
     return ""
 
 
